@@ -32,4 +32,7 @@ export const TEMPLATES = [
   { id: 'workflows', name: 'Workflows Manager', desc: 'Light sage team management', color: 'bg-emerald-50', file: 'Workflows.html' },
   { id: 'crextio', name: 'Crextio HR', desc: 'Warm cream HR platform', color: 'bg-amber-50', file: 'crextio.html' },
   { id: 'flux', name: 'Flux Health', desc: 'Clean health monitoring dashboard', color: 'bg-slate-100', file: 'flux.html' },
+  { id: 'vistore-smarter-crm-stronger-sales', name: 'Vistore - Smarter CRM, Stronger Sales', desc: 'Light glassmorphism purple-accented dashboard', color: 'bg-white', file: 'Vistore---Smarter-CRM-Stronger-Sales.html' },
+
+
 ];

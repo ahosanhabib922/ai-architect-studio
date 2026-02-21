@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vistore - Smarter CRM, Stronger Sales</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/iconify-icon@2.3.0/dist/iconify-icon.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .animate-fade-in-up {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+        .delay-400 { animation-delay: 400ms; }
+        
+        .spotlight-card {
+            position: relative;
+            overflow: hidden;
+        }
+        .spotlight-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(600px circle at var(--x) var(--y), rgba(255,255,255,0.06), transparent 40%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .spotlight-card:hover::before {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-900 selection:bg-orange-100">
+
+    <!-- Navbar Organism (Copied from master) -->
+    <nav class="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-6xl px-4">
+        <div class="bg-white/80 backdrop-blur-md border border-gray-100 rounded-full px-6 py-3 flex items-center justify-between shadow-sm">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
+                    <iconify-icon icon="lucide:layers" class="text-white" width="18"></iconify-icon>
+                </div>
+                <span class="font-bold text-xl tracking-tight text-gray-900">Vistore.</span>
+            </div>
+            <div class="hidden md:flex items-center gap-1 bg-gray-100/50 p-1 rounded-full border border-gray-100">
+                <a href="index.page.html" class="px-5 py-2 rounded-full text-sm font-medium bg-black text-white transition-all">Home</a>
+                <a href="#features" class="px-5 py-2 rounded-full text-sm font-medium text-gray-600 hover:text-black transition-all">About Us</a>
+                <a href="#testimonials" class="px-5 py-2 rounded-full text-sm font-medium text-gray-600 hover:text-black transition-all">Reviews</a>
+                <a href="#pricing" class="px-5 py-2 rounded-full text-sm font-medium text-gray-600 hover:text-black transition-all">Products</a>
+                <a href="#blog" class="px-5 py-2 rounded-full text-sm font-medium text-gray-600 hover:text-black transition-all">Blog</a>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="#" class="text-sm font-semibold text-gray-700 hover:text-black">Sign In</a>
+                <a href="#" class="bg-black text-white text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-gray-800 transition-all border border-black shadow-lg shadow-black/5">Sign up Free</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Organism (Copied from master) -->
+    <section class="relative pt-40 pb-20 overflow-hidden bg-[#FDF2F2]/30">
+        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-pink-200/40 rounded-full blur-[120px] -z-10"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-orange-100/40 rounded-full blur-[120px] -z-10"></div>
+        <div class="container mx-auto px-6 text-center max-w-4xl">
+            <div class="inline-flex items-center gap-2 bg-white/80 border border-gray-100 px-4 py-1.5 rounded-full shadow-sm mb-8 animate-fade-in-up">
+                <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
+                <span class="text-sm font-semibold text-gray-600">Top CRM Platform 🚀</span>
+            </div>
+            <h1 class="text-5xl md:text-7xl font-bold text-gray-900 leading-[1.1] mb-6 tracking-tight animate-fade-in-up delay-100">
+                Smarter CRM Stronger<br/>Sustainable Sales
+            </h1>
+            <p class="text-gray-500 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed animate-fade-in-up delay-200">
+                Our CRM helps you nurture relationships, automate sales processes, and make data-driven decisions—so you can focus on closing more deals.
+            </p>
+            <a href="#" class="inline-flex items-center gap-2 bg-[#1A1A1A] text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-black transition-transform hover:scale-105 shadow-xl shadow-black/10 animate-fade-in-up delay-300">
+                Get Started
+                <iconify-icon icon="lucide:arrow-right"></iconify-icon>
+            </a>
+            <div class="mt-20 relative animate-fade-in-up delay-400">
+                <div class="relative z-10 p-4 bg-white/40 backdrop-blur-sm border border-white/60 rounded-[2.5rem] shadow-2xl">
+                    <img src="https://picsum.photos/seed/crm-dashboard-ui/1200/800" class="w-full rounded-[2rem] shadow-lg border border-gray-100" alt="CRM Dashboard">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Logo Cloud -->
+    <section class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-wrap justify-center items-center gap-12 md:gap-24 opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
+                <div class="flex items-center gap-2 font-bold text-2xl"><iconify-icon icon="lucide:zap"></iconify-icon> Boltshift</div>
+                <div class="flex items-center gap-2 font-bold text-2xl"><iconify-icon icon="lucide:box"></iconify-icon> Lightbox</div>
+                <div class="flex items-center gap-2 font-bold text-2xl"><iconify-icon icon="lucide:circle"></iconify-icon> Spherule</div>
+                <div class="flex items-center gap-2 font-bold text-2xl"><iconify-icon icon="lucide:globe"></iconify-icon> GlobalBank</div>
+                <div class="flex items-center gap-2 font-bold text-2xl"><iconify-icon icon="lucide:cpu"></iconify-icon> Nietzsche</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Feature Section 1: Analysis -->
+    <section id="features" class="py-32 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col md:flex-row items-center gap-20">
+                <div class="w-full md:w-1/2">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-4">• Order Analysis</span>
+                    <h2 class="text-4xl md:text-5xl font-bold text-gray-900 leading-tight mb-6">Selling Digital<br>Products Is Easier.</h2>
+                    <p class="text-gray-500 text-lg mb-8 max-w-md">Digital Products Are The Future! Easy To Start, Highly Profitable For Smart Entrepreneurs.</p>
+                    <a href="#" class="bg-black text-white px-8 py-3.5 rounded-full font-bold inline-flex items-center gap-2 hover:scale-105 transition-transform">
+                        Learn More <iconify-icon icon="lucide:arrow-right"></iconify-icon>
+                    </a>
+                </div>
+                <div class="w-full md:w-1/2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-[#F9FAFB] p-8 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all">
+                        <div class="flex justify-between items-center mb-6">
+                            <span class="font-bold text-gray-900">Lancer Evo 10</span>
+                            <iconify-icon icon="lucide:x" class="text-gray-400"></iconify-icon>
+                        </div>
+                        <div class="h-2 w-full bg-gray-200 rounded-full mb-2 overflow-hidden">
+                            <div class="w-[87%] h-full bg-orange-400"></div>
+                        </div>
+                        <p class="text-[10px] font-bold text-gray-400 mb-6 uppercase">Yes Targeted • 87%</p>
+                        <div class="text-2xl font-bold text-gray-900">$24,120 <span class="text-sm text-gray-400 font-normal">/$32,200</span></div>
+                    </div>
+                    <div class="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-xl">
+                        <div class="flex justify-between items-center mb-6">
+                            <span class="font-bold text-gray-900">Order Analysis</span>
+                            <iconify-icon icon="lucide:info" class="text-gray-400"></iconify-icon>
+                        </div>
+                        <div class="space-y-4">
+                            <img src="https://images.unsplash.com/photo-1666537072206-6a7a01ecb7d9?ixid=M3w4NzM2MDV8MHwxfHNlYXJjaHwxfHxjaGFydCUyMDF8ZW58MHwwfHx8MTc3MTY2MjU3OHww&ixlib=rb-4.1.0&w=300&h=150&fit=crop&auto=format&q=80" class="rounded-xl w-full" alt="Analytics Chart">
+                            <div class="flex justify-between">
+                                <span class="text-sm font-bold text-gray-900">6,828,782</span>
+                                <span class="text-[10px] text-green-500 font-bold">+1.23%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Feature Section 2: CRM Benefits -->
+    <section class="py-32 bg-[#F9FAFB]">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col md:flex-row-reverse items-center gap-20">
+                <div class="w-full md:w-1/2">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-4">• Key Features</span>
+                    <h2 class="text-4xl md:text-5xl font-bold text-gray-900 leading-tight mb-8">What Can Our CRM<br>Sales Do For You?</h2>
+                    
+                    <div class="space-y-8">
+                        <div class="flex gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-orange-100 flex-shrink-0 flex items-center justify-center text-orange-500">
+                                <iconify-icon icon="lucide:users" width="24"></iconify-icon>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-900 text-lg mb-1">Better Lead Management</h4>
+                                <p class="text-gray-500 text-sm">Track Every Interaction With Potential Customers In One Centralized Place.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-purple-100 flex-shrink-0 flex items-center justify-center text-purple-500">
+                                <iconify-icon icon="lucide:bar-chart-3" width="24"></iconify-icon>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-900 text-lg mb-1">Smart Data Analytics</h4>
+                                <p class="text-gray-500 text-sm">Get Real-Time Reports And Insights To Make Better Decisions.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-6 mt-12">
+                        <a href="#" class="bg-black text-white px-8 py-3.5 rounded-full font-bold hover:scale-105 transition-transform">Learn More</a>
+                        <div class="flex gap-2">
+                            <button class="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:text-black hover:border-black"><iconify-icon icon="lucide:layout-grid"></iconify-icon></button>
+                            <button class="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:text-black hover:border-black"><iconify-icon icon="lucide:star"></iconify-icon></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="w-full md:w-1/2 relative">
+                    <div class="bg-white p-8 rounded-[2.5rem] shadow-2xl border border-gray-100 max-w-md mx-auto relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-purple-100/30 blur-3xl rounded-full"></div>
+                        <div class="flex justify-between items-center mb-8">
+                            <h3 class="font-bold text-xl">Recent Activity</h3>
+                            <div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white">
+                                <iconify-icon icon="lucide:arrow-up-right"></iconify-icon>
+                            </div>
+                        </div>
+                        <div class="space-y-6">
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
+                                <div class="flex gap-4 items-center">
+                                    <img src="https://images.unsplash.com/photo-1744743128385-990e02da095f?ixid=M3w4NzM2MDV8MHwxfHNlYXJjaHwxfHxqYWNrZXQlMjAxfGVufDB8MHx8fDE3NzE2MjIyNTJ8MA&ixlib=rb-4.1.0&w=50&h=50&fit=crop&auto=format&q=80" class="rounded-xl" alt="Product">
+                                    <div>
+                                        <p class="font-bold text-sm">Stone Black Jacket</p>
+                                        <p class="text-[10px] text-gray-400 uppercase font-bold">Qty: 10 • 5 Mins Ago</p>
+                                    </div>
+                                </div>
+                                <span class="font-bold text-gray-900">$200.00</span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
+                                <div class="flex gap-4 items-center">
+                                    <img src="https://images.unsplash.com/photo-1765871904025-63a4328aef91?ixid=M3w4NzM2MDV8MHwxfHNlYXJjaHwxfHxqYWNrZXQlMjAyfGVufDB8MHx8fDE3NzE2NjI1Nzh8MA&ixlib=rb-4.1.0&w=50&h=50&fit=crop&auto=format&q=80" class="rounded-xl" alt="Product">
+                                    <div>
+                                        <p class="font-bold text-sm">White Tech Hoodie</p>
+                                        <p class="text-[10px] text-gray-400 uppercase font-bold">Qty: 2 • 12 Mins Ago</p>
+                                    </div>
+                                </div>
+                                <span class="font-bold text-gray-900">$140.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="py-32 bg-white">
+        <div class="container mx-auto px-6 text-center">
+            <span class="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-4">• Our Testimonial</span>
+            <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">What Our Customers Say</h2>
+            <p class="text-gray-500 mb-10">See How Companies Like Yours Have Smashed Their Sales Success Goals</p>
+            <a href="#" class="bg-black text-white px-8 py-3.5 rounded-full font-bold inline-flex items-center gap-2 mb-20 hover:bg-gray-800 transition-all">
+                See All Testimonial <iconify-icon icon="lucide:arrow-right"></iconify-icon>
+            </a>
+
+            <div class="max-w-5xl mx-auto space-y-8">
+                <!-- Large Testimonial Card -->
+                <div class="bg-[#FDF2F2]/40 border border-gray-100 p-12 rounded-[3rem] flex flex-col md:flex-row items-center gap-12 text-left">
+                    <div class="text-left md:w-1/3">
+                        <div class="text-5xl font-bold text-gray-900 mb-2">$2.5 M</div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Generate Sales</p>
+                    </div>
+                    <div class="md:w-2/3">
+                        <p class="text-xl md:text-2xl font-bold text-gray-800 leading-relaxed mb-8">
+                            Using Vistore CRM Is One Of The Best Decisions We've Ever Made. We've Seen Our Annual Revenue Explode, And The Outlook Just Keeps Getting Sunnier.
+                        </p>
+                        <div class="flex items-center gap-4">
+                            <img src="https://picsum.photos/seed/ceo-1/50/50" class="w-12 h-12 rounded-full ring-4 ring-white shadow-sm" alt="Rick Barker">
+                            <div>
+                                <h5 class="font-bold text-gray-900">Rick Barker</h5>
+                                <p class="text-xs text-gray-400 font-bold uppercase">Founder & CEO, Foster Business Strategies</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-[#F9FAFB] border border-gray-100 p-12 rounded-[3rem] flex flex-col md:flex-row items-center gap-12 text-left">
+                    <div class="text-left md:w-1/3">
+                        <div class="text-5xl font-bold text-gray-900 mb-2">45%</div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Grew Revenue</p>
+                    </div>
+                    <div class="md:w-2/3">
+                        <p class="text-xl md:text-2xl font-bold text-gray-800 leading-relaxed mb-8">
+                            Vistore Is Created For Sales People. It's The Kind Of Software That Just Works. I Don't Have To Try To Make It Work. It Already Does. It's Just Perfect.
+                        </p>
+                        <div class="flex items-center gap-4">
+                            <img src="https://images.unsplash.com/photo-1667039487297-be4ae76e6df1?ixid=M3w4NzM2MDV8MHwxfHNlYXJjaHwxfHxtYXJrZXRpbmclMjAxfGVufDB8MHx8fDE3NzE2NjI1Nzh8MA&ixlib=rb-4.1.0&w=50&h=50&fit=crop&auto=format&q=80" class="w-12 h-12 rounded-full ring-4 ring-white shadow-sm" alt="Henry Jacks">
+                            <div>
+                                <h5 class="font-bold text-gray-900">Henry Jacks</h5>
+                                <p class="text-xs text-gray-400 font-bold uppercase">Digital Marketing Director</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section (Requested) -->
+    <section id="pricing" class="py-32 bg-[#1A1A1A] text-white rounded-[4rem] mx-6 mb-32 overflow-hidden relative">
+        <div class="absolute top-0 right-0 w-96 h-96 bg-orange-500/10 blur-[120px] rounded-full"></div>
+        <div class="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 blur-[120px] rounded-full"></div>
+        
+        <div class="container mx-auto px-6 relative z-10 text-center">
+            <span class="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-4">• Pricing Plans</span>
+            <h2 class="text-4xl md:text-5xl font-bold mb-16">Simple Plans for Your Business</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                <!-- Basic -->
+                <div class="bg-white/5 border border-white/10 p-10 rounded-[2.5rem] text-left hover:bg-white/10 transition-all group">
+                    <h3 class="text-xl font-bold mb-4">Starter</h3>
+                    <div class="text-4xl font-bold mb-6">$19<span class="text-sm font-normal text-gray-400">/mo</span></div>
+                    <ul class="space-y-4 mb-10 text-gray-400">
+                        <li class="flex items-center gap-3"><iconify-icon icon="lucide:check" class="text-orange-400"></iconify-icon> 5 Users included</li>
+                        <li class="flex items-center gap-3"><iconify-icon icon="lucide:check" class="text-orange-400"></iconify-icon> Basic CRM analytics</li>
+                        <li class="flex items-center gap-3"><iconify-icon icon="lucide:check" class="text-orange-400"></iconify-icon> 2GB Storage</li>
+                    </ul>
+                    <a href="#" class="block w-full text-center py-4 rounded-full border border-white/20 font-bold group-hover:bg-white group-hover:text-black transition-all">Get Started</a>
+                </div>
+                <!-- Pro -->
+                <div class="bg-white p-10 rounded-[2.5rem] text-left text-black shadow-2xl relative scale-105 z-20">
+                    <div class="absolute top-4 right-8 bg-orange-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">Most Popular</div>
+                    <h3 class="text-xl font-bold mb-4">Professional</h3>
+                    <div class="text-4xl font-bold mb-6">$49<span class="text-sm font-normal text-gray-500">/mo</span></div>
+                    <ul class="space-y-4 mb-10 text-gray-600">
+                        <li class="flex items-center gap-3"><iconify-icon icon="lucide:check" class="text-orange-500"></iconify-icon> Unlimited Users</li>
+                        <li class="flex items-center gap-3"><iconify-icon icon="lucide:check" class="text-orange-500"></iconify-icon> Advanced Automation</li>
+                        <li class="flex items-center gap-3"><iconify-icon icon="lucide:check" class="text-orange-500"></iconify-icon> AI Lead Scoring</li>
+                        <li class="flex items-center gap-3"><iconify-icon icon="lucide:check" class="text-orange-500"></iconify-icon> 50GB Storage</li>
+                    </ul>
+                    <a href="#" class="block w-full text-center py-4 rounded-full bg-black text-white font-bold hover:bg-gray-800 transition-all">Start Free Trial</a>
+                </div>
+                <!-- Enterprise -->
+                <div class="bg-white/5 border border-white/10 p-10 rounded-[2.5rem] text-left hover:bg-white/10 transition-all group">
+                    <h3 class="text-xl font-bold mb-4">Enterprise</h3>
+                    <div class="text-4xl font-bold mb-6">$99<span class="text-sm font-normal text-gray-400">/mo</span></div>
+                    <ul class="space-y-4 mb-10 text-gray-400">
+                        <li class="flex items-center gap-3"><iconify-icon icon="lucide:check" class="text-orange-400"></iconify-icon> Custom Integrations</li>
+                        <li class="flex items-center gap-3"><iconify-icon icon="lucide:check" class="text-orange-400"></iconify-icon> 24/7 Support</li>
+                        <li class="flex items-center gap-3"><iconify-icon icon="lucide:check" class="text-orange-400"></iconify-icon> Multi-region Support</li>
+                    </ul>
+                    <a href="#" class="block w-full text-center py-4 rounded-full border border-white/20 font-bold group-hover:bg-white group-hover:text-black transition-all">Contact Us</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="py-32 bg-white" x-data="{ active: 1 }">
+        <div class="container mx-auto px-6 max-w-4xl">
+            <div class="text-center mb-16">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-4">• Our FAQs</span>
+                <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">CRM Sales FAQs</h2>
+                <p class="text-gray-500 mb-10 max-w-xl mx-auto">As a leading digital marketing agency, we are dedicated to providing comprehensive educational resources and answering frequently asked questions.</p>
+                <div class="flex items-center justify-center gap-8">
+                    <a href="#" class="bg-black text-white px-8 py-3.5 rounded-full font-bold hover:bg-gray-800 transition-all">More Questions <iconify-icon icon="lucide:arrow-right"></iconify-icon></a>
+                    <a href="#" class="font-bold text-gray-900 border-b-2 border-black pb-1">Contact Us</a>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="border border-gray-100 rounded-[2rem] overflow-hidden transition-all" :class="active === 1 ? 'bg-[#F9FAFB]' : 'bg-white'">
+                    <button @click="active = active === 1 ? 0 : 1" class="w-full flex items-center justify-between p-8 text-left">
+                        <span class="text-lg font-bold text-gray-900">How do I integrate CRM Sales with other tools?</span>
+                        <iconify-icon :icon="active === 1 ? 'lucide:minus' : 'lucide:plus'" class="text-gray-400"></iconify-icon>
+                    </button>
+                    <div x-show="active === 1" x-collapse class="px-8 pb-8 text-gray-500 leading-relaxed">
+                        We offer comprehensive guides, expert insights, and hands-on technical support to help you seamlessly integrate CRM Sales with your existing tools. Our goal is to simplify the process, enhance compatibility, and ensure you get the most out of your CRM system for improved productivity and business growth.
+                    </div>
+                </div>
+
+                <div class="border border-gray-100 rounded-[2rem] overflow-hidden transition-all" :class="active === 2 ? 'bg-[#F9FAFB]' : 'bg-white'">
+                    <button @click="active = active === 2 ? 0 : 2" class="w-full flex items-center justify-between p-8 text-left">
+                        <span class="text-lg font-bold text-gray-900">Is there a free trial available?</span>
+                        <iconify-icon :icon="active === 2 ? 'lucide:minus' : 'lucide:plus'" class="text-gray-400"></iconify-icon>
+                    </button>
+                    <div x-show="active === 2" x-collapse class="px-8 pb-8 text-gray-500 leading-relaxed">
+                        Yes, we offer a 14-day free trial for all our plans so you can experience the power of Vistore first-hand.
+                    </div>
+                </div>
+
+                <div class="border border-gray-100 rounded-[2rem] overflow-hidden transition-all" :class="active === 3 ? 'bg-[#F9FAFB]' : 'bg-white'">
+                    <button @click="active = active === 3 ? 0 : 3" class="w-full flex items-center justify-between p-8 text-left">
+                        <span class="text-lg font-bold text-gray-900">Is CRM Sales suitable for small businesses?</span>
+                        <iconify-icon :icon="active === 3 ? 'lucide:minus' : 'lucide:plus'" class="text-gray-400"></iconify-icon>
+                    </button>
+                    <div x-show="active === 3" x-collapse class="px-8 pb-8 text-gray-500 leading-relaxed">
+                        Absolutely! Vistore is designed to scale with your business, whether you're a solopreneur or a growing startup.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer Organism (Copied from master) -->
+    <footer class="bg-white pt-24 pb-12">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col md:flex-row items-center justify-between mb-24 gap-10">
+                <div>
+                    <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Are You Interested<br/>With Vistore?</h2>
+                    <a href="#" class="inline-flex items-center gap-2 bg-black text-white px-8 py-4 rounded-full font-bold mt-4 hover:bg-gray-800 transition-all">
+                        Contact Sales
+                        <iconify-icon icon="lucide:arrow-right"></iconify-icon>
+                    </a>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-12 text-left">
+                    <div>
+                        <h4 class="font-bold text-gray-900 mb-6">Company</h4>
+                        <ul class="space-y-4 text-gray-500">
+                            <li><a href="#" class="hover:text-black">Security</a></li>
+                            <li><a href="#" class="hover:text-black">Brand Guidelines</a></li>
+                            <li><a href="#" class="hover:text-black">Careers</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-900 mb-6">Career</h4>
+                        <ul class="space-y-4 text-gray-500">
+                            <li><a href="#" class="hover:text-black">Jobs</a></li>
+                            <li><a href="#" class="hover:text-black">New</a></li>
+                            <li><a href="#" class="hover:text-black">Hiring</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-900 mb-6">Legal Information</h4>
+                        <ul class="space-y-4 text-gray-500">
+                            <li><a href="#" class="hover:text-black">Privacy Policy</a></li>
+                            <li><a href="#" class="hover:text-black">Terms of Service</a></li>
+                            <li><a href="#" class="hover:text-black">Cookies Policy</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <hr class="border-gray-100 mb-12">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-8">
+                <div class="flex items-center gap-12">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
+                            <iconify-icon icon="lucide:layers" class="text-white" width="18"></iconify-icon>
+                        </div>
+                        <span class="font-bold text-xl tracking-tight text-gray-900">Vistore.</span>
+                    </div>
+                    <div class="hidden md:flex items-center gap-8">
+                        <a href="index.page.html" class="text-sm font-semibold text-gray-600 hover:text-black">Home</a>
+                        <a href="#features" class="text-sm font-semibold text-gray-600 hover:text-black">About Us</a>
+                        <a href="#testimonials" class="text-sm font-semibold text-gray-600 hover:text-black">Reviews</a>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <a href="#" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-black hover:text-white transition-all"><iconify-icon icon="lucide:facebook"></iconify-icon></a>
+                    <a href="#" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-black hover:text-white transition-all"><iconify-icon icon="lucide:instagram"></iconify-icon></a>
+                    <a href="#" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-black hover:text-white transition-all"><iconify-icon icon="lucide:twitter"></iconify-icon></a>
+                    <a href="#" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-black hover:text-white transition-all"><iconify-icon icon="lucide:linkedin"></iconify-icon></a>
+                </div>
+            </div>
+            <div class="mt-12 pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between text-xs font-semibold text-gray-400 uppercase tracking-widest gap-4">
+                <p>© Vistore by Sans Brothers</p>
+                <div class="flex gap-8">
+                    <a href="#" class="hover:text-black">Terms & Conditions</a>
+                    <a href="#" class="hover:text-black">Privacy Policy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Spotlight effect for cards
+        document.querySelectorAll('.spotlight-card').forEach(card => {
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.setProperty('--x', `${x}px`);
+                card.style.setProperty('--y', `${y}px`);
+            });
+        });
+
+        // Sticky Nav logic
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav div');
+            if (window.scrollY > 50) {
+                nav.classList.add('shadow-xl', 'bg-white/90');
+            } else {
+                nav.classList.remove('shadow-xl', 'bg-white/90');
+            }
+        });
+    </script>
+</body>
+</html>
