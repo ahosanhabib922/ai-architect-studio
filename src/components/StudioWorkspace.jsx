@@ -14,7 +14,7 @@ import {
 import { TEMPLATES } from '../config/templates';
 import { DEFAULT_MESSAGES, generateChatId } from '../config/constants';
 import { SYSTEM_INSTRUCTION, unsplashKey } from '../config/api';
-import { loadInstructionsFromFirestore, loadSettingsFromFirestore } from '../utils/firestoreAdmin';
+import { loadInstructionsFromFirestore } from '../utils/firestoreAdmin';
 import { loadJSZip } from '../utils/loadJSZip';
 import { generateAIResponse, generateAIResponseStream } from '../utils/generateAIResponse';
 import { getInjectionScript } from '../utils/injectionScript';
@@ -22,7 +22,7 @@ import { replaceImagesInFiles } from '../utils/replaceImages';
 import { GOOGLE_FONTS } from '../config/fonts';
 import { useAuth } from '../contexts/AuthContext';
 import { loadSessionsFromFirestore, saveSessionToFirestore, deleteSessionFromFirestore } from '../utils/firestoreSessions';
-import { trackTokenUsage, getUserTokenUsage } from '../utils/tokenTracker';
+import { trackTokenUsage, getUserTokenInfo } from '../utils/tokenTracker';
 import Accordion from './ui/Accordion';
 import Field from './ui/Field';
 import Input from './ui/Input';
@@ -111,20 +111,20 @@ const StudioWorkspace = () => {
   const endOfChatRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // --- Load live instructions + settings from Firestore ---
+  // --- Load live instructions from Firestore ---
   useEffect(() => {
     loadInstructionsFromFirestore().then(data => {
       if (data?.systemInstruction) setLiveSystemInstruction(data.systemInstruction);
     }).catch(() => {});
-    loadSettingsFromFirestore().then(data => {
-      if (data?.tokenLimit) setTokenLimit(data.tokenLimit);
-    }).catch(() => {});
   }, []);
 
-  // --- Load user's current token usage ---
+  // --- Load user's token usage + per-user limit ---
   useEffect(() => {
     if (!user) return;
-    getUserTokenUsage(user.uid).then(t => setUserTokensUsed(t)).catch(() => {});
+    getUserTokenInfo(user.uid).then(({ used, limit }) => {
+      setUserTokensUsed(used);
+      setTokenLimit(limit);
+    }).catch(() => {});
   }, [user]);
 
   // --- Fetch Template DNA when selected ---
