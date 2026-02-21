@@ -88,15 +88,7 @@ export const generateAIResponseStream = async (prompt, systemInstruction, attach
   let buffer = '';
   let usage = { promptTokens: 0, outputTokens: 0, totalTokens: 0 };
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-
-    const lines = buffer.split('\n');
-    buffer = lines.pop(); // keep incomplete line
-
+  const processLines = (lines) => {
     for (const line of lines) {
       if (line.startsWith('data: ')) {
         const jsonStr = line.slice(6).trim();
@@ -120,6 +112,22 @@ export const generateAIResponseStream = async (prompt, systemInstruction, attach
         } catch { /* skip malformed chunk */ }
       }
     }
+  };
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+
+    const lines = buffer.split('\n');
+    buffer = lines.pop(); // keep incomplete line
+    processLines(lines);
+  }
+
+  // Process remaining buffer (last chunk with usageMetadata)
+  if (buffer.trim()) {
+    processLines(buffer.split('\n'));
   }
 
   return { text: accumulated, usage };
