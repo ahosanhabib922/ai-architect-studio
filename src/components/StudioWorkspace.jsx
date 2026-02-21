@@ -14,6 +14,7 @@ import {
 import { TEMPLATES } from '../config/templates';
 import { DEFAULT_MESSAGES, generateChatId } from '../config/constants';
 import { SYSTEM_INSTRUCTION, unsplashKey } from '../config/api';
+import { loadInstructionsFromFirestore } from '../utils/firestoreAdmin';
 import { loadJSZip } from '../utils/loadJSZip';
 import { generateAIResponse, generateAIResponseStream } from '../utils/generateAIResponse';
 import { getInjectionScript } from '../utils/injectionScript';
@@ -96,14 +97,23 @@ const StudioWorkspace = () => {
   const [previewItem, setPreviewItem] = useState(null);
 
   const [codeEditValue, setCodeEditValue] = useState(null); // local buffer for code editor (null = use generatedFiles)
+  const [liveSystemInstruction, setLiveSystemInstruction] = useState(null);
 
   const [unsplashQuery, setUnsplashQuery] = useState('');
+
   const [unsplashResults, setUnsplashResults] = useState([]);
   const [isSearchingUnsplash, setIsSearchingUnsplash] = useState(false);
 
   const iframeRef = useRef(null);
   const endOfChatRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  // --- Load live instructions from Firestore ---
+  useEffect(() => {
+    loadInstructionsFromFirestore().then(data => {
+      if (data?.systemInstruction) setLiveSystemInstruction(data.systemInstruction);
+    }).catch(() => {});
+  }, []);
 
   // --- Fetch Template DNA when selected ---
   useEffect(() => {
@@ -561,7 +571,7 @@ const StudioWorkspace = () => {
     setGenerationStatus('Analyzing request & planning structure...');
     closeFloatingEditor();
 
-    const sysInstruction = SYSTEM_INSTRUCTION + (templateDNA ? `\n\nSTYLE DNA (MANDATORY):\n${templateDNA}` : '');
+    const sysInstruction = (liveSystemInstruction || SYSTEM_INSTRUCTION) + (templateDNA ? `\n\nSTYLE DNA (MANDATORY):\n${templateDNA}` : '');
 
     let fullPrompt = userPrompt;
     // Context aware prompting — enforce surgical edits
