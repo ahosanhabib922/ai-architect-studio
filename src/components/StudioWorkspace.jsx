@@ -8,7 +8,7 @@ import {
   FileText, Image as ImageIcon, File, Maximize, Minimize,
   Edit2, Bot, AlignLeft, AlignCenter, AlignRight, AlignJustify,
   MoreHorizontal, ArrowDown, CopyPlus, CornerLeftUp, Trash, Eye, Undo, Redo, Square,
-  Menu, PlusCircle, MessageSquare, Trash2, Clock, Plus, FolderDown, FileCode, Search
+  Menu, PlusCircle, MessageSquare, Trash2, Clock, Plus, FolderDown, FileCode, Search, Zap
 } from 'lucide-react';
 
 import { TEMPLATES } from '../config/templates';
@@ -567,6 +567,14 @@ const StudioWorkspace = () => {
 
   const isTokenLimitReached = tokenLimit > 0 && userTokensUsed >= tokenLimit;
 
+  const formatTokens = (n) => {
+    if (!n) return '0';
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+    return n.toString();
+  };
+  const tokenUsagePercent = tokenLimit > 0 ? Math.min((userTokensUsed / tokenLimit) * 100, 100) : 0;
+
   const handleSend = async () => {
     if (!input.trim() && attachments.length === 0 || isGenerating) return;
 
@@ -1001,14 +1009,37 @@ RULES FOR THIS EDIT:
                       <PlusCircle className="w-4 h-4" /> Start New Design
                   </button>
                   {user && (
-                    <div className="flex items-center justify-between px-1">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <img src={user.photoURL} alt="" className="w-7 h-7 rounded-full border border-slate-200 shrink-0" referrerPolicy="no-referrer" />
-                        <span className="text-xs text-slate-600 truncate">{user.displayName || user.email}</span>
+                    <div className="px-1 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <img src={user.photoURL} alt="" className="w-7 h-7 rounded-full border border-slate-200 shrink-0" referrerPolicy="no-referrer" />
+                          <span className="text-xs text-slate-600 truncate">{user.displayName || user.email}</span>
+                        </div>
+                        <button onClick={() => { logout(); navigate('/'); }} className="text-xs text-slate-400 hover:text-red-500 transition-colors shrink-0" title="Sign Out">
+                          Sign Out
+                        </button>
                       </div>
-                      <button onClick={() => { logout(); navigate('/'); }} className="text-xs text-slate-400 hover:text-red-500 transition-colors shrink-0" title="Sign Out">
-                        Sign Out
-                      </button>
+                      {tokenLimit > 0 && (
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1">
+                              <Zap className={`w-3 h-3 ${isTokenLimitReached ? 'text-red-500' : 'text-amber-500'}`} />
+                              <span className={`text-[10px] font-medium ${isTokenLimitReached ? 'text-red-600' : 'text-slate-500'}`}>
+                                {formatTokens(userTokensUsed)} / {formatTokens(tokenLimit)}
+                              </span>
+                            </div>
+                            <span className={`text-[10px] ${isTokenLimitReached ? 'text-red-500 font-semibold' : 'text-slate-400'}`}>
+                              {isTokenLimitReached ? 'Limit reached' : `${Math.round(tokenUsagePercent)}%`}
+                            </span>
+                          </div>
+                          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all ${isTokenLimitReached ? 'bg-red-500' : tokenUsagePercent > 80 ? 'bg-amber-500' : 'bg-[#A78BFA]'}`}
+                              style={{ width: `${tokenUsagePercent}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
               </div>
