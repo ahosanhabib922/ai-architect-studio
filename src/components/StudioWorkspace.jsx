@@ -14,7 +14,7 @@ import {
 import { TEMPLATES } from '../config/templates';
 import { DEFAULT_MESSAGES, generateChatId } from '../config/constants';
 import { SYSTEM_INSTRUCTION, unsplashKey } from '../config/api';
-import { loadInstructionsFromFirestore } from '../utils/firestoreAdmin';
+import { loadInstructionsFromFirestore, loadSettingsFromFirestore } from '../utils/firestoreAdmin';
 import { loadJSZip } from '../utils/loadJSZip';
 import { generateAIResponse, generateAIResponseStream } from '../utils/generateAIResponse';
 import { getInjectionScript } from '../utils/injectionScript';
@@ -22,7 +22,7 @@ import { replaceImagesInFiles } from '../utils/replaceImages';
 import { GOOGLE_FONTS } from '../config/fonts';
 import { useAuth } from '../contexts/AuthContext';
 import { loadSessionsFromFirestore, saveSessionToFirestore, deleteSessionFromFirestore } from '../utils/firestoreSessions';
-import { trackTokenUsage } from '../utils/tokenTracker';
+import { trackTokenUsage, getUserTokenUsage } from '../utils/tokenTracker';
 import Accordion from './ui/Accordion';
 import Field from './ui/Field';
 import Input from './ui/Input';
@@ -99,6 +99,8 @@ const StudioWorkspace = () => {
 
   const [codeEditValue, setCodeEditValue] = useState(null); // local buffer for code editor (null = use generatedFiles)
   const [liveSystemInstruction, setLiveSystemInstruction] = useState(null);
+  const [tokenLimit, setTokenLimit] = useState(0); // 0 = unlimited
+  const [userTokensUsed, setUserTokensUsed] = useState(0);
 
   const [unsplashQuery, setUnsplashQuery] = useState('');
 
@@ -109,12 +111,21 @@ const StudioWorkspace = () => {
   const endOfChatRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // --- Load live instructions from Firestore ---
+  // --- Load live instructions + settings from Firestore ---
   useEffect(() => {
     loadInstructionsFromFirestore().then(data => {
       if (data?.systemInstruction) setLiveSystemInstruction(data.systemInstruction);
     }).catch(() => {});
+    loadSettingsFromFirestore().then(data => {
+      if (data?.tokenLimit) setTokenLimit(data.tokenLimit);
+    }).catch(() => {});
   }, []);
+
+  // --- Load user's current token usage ---
+  useEffect(() => {
+    if (!user) return;
+    getUserTokenUsage(user.uid).then(t => setUserTokensUsed(t)).catch(() => {});
+  }, [user]);
 
   // --- Fetch Template DNA when selected ---
   useEffect(() => {
@@ -496,7 +507,7 @@ const StudioWorkspace = () => {
 
     try {
       const { text, usage } = await generateAIResponse(prompt, "You are a specialized HTML element editor.");
-      if (user && usage) trackTokenUsage(user.uid, usage);
+      if (user && usage) { trackTokenUsage(user.uid, usage); setUserTokensUsed(prev => prev + (usage.totalTokens || 0)); }
       let cleanHTML = text.replace(/^```html\n?/, '').replace(/\n?```$/, '').trim();
       sendToIframe({ type: 'UPDATE_ELEMENT', id: selectedElement.id, newHtml: cleanHTML });
       setElementPrompt('');
@@ -553,8 +564,19 @@ const StudioWorkspace = () => {
 
   const removeAttachment = (index) => setAttachments(prev => prev.filter((_, i) => i !== index));
 
+  const isTokenLimitReached = tokenLimit > 0 && userTokensUsed >= tokenLimit;
+
   const handleSend = async () => {
     if (!input.trim() && attachments.length === 0 || isGenerating) return;
+
+    // Check token limit before generation
+    if (isTokenLimitReached) {
+      setMessages(prev => [...prev, {
+        role: 'model', type: 'error',
+        content: 'You have reached your token usage limit. Please contact the admin to continue.'
+      }]);
+      return;
+    }
 
     const userPrompt = input;
     const currentAttachments = [...attachments];
@@ -678,7 +700,7 @@ RULES FOR THIS EDIT:
       );
 
       // Track token usage
-      if (user && streamResult.usage) trackTokenUsage(user.uid, streamResult.usage);
+      if (user && streamResult.usage) { trackTokenUsage(user.uid, streamResult.usage); setUserTokensUsed(prev => prev + (streamResult.usage.totalTokens || 0)); }
 
       // Post-process: replace placeholder images with real Unsplash photos
       setGenerationStatus('Enhancing images...');
@@ -793,7 +815,7 @@ RULES FOR THIS EDIT:
         ${cleanHTMLForAI}`;
 
         const { text: response, usage } = await generateAIResponse(prompt, "You are an expert React developer specializing in HTML-to-JSX conversion.");
-        if (user && usage) trackTokenUsage(user.uid, usage);
+        if (user && usage) { trackTokenUsage(user.uid, usage); setUserTokensUsed(prev => prev + (usage.totalTokens || 0)); }
         let content = response.replace(/^```(jsx|react|javascript|js)?\n?/, '').replace(/\n?```$/, '').trim();
 
         const blob = new Blob([content], { type: 'text/javascript' });
@@ -1207,13 +1229,20 @@ RULES FOR THIS EDIT:
                 </div>
               )}
 
+              {isTokenLimitReached && (
+                <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 mb-2">
+                  <span className="text-xs text-red-400">Token limit reached. Contact admin to reset.</span>
+                </div>
+              )}
+
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                 onPaste={handlePaste}
-                placeholder="Describe your architecture or paste an image..."
+                placeholder={isTokenLimitReached ? "Token limit reached..." : "Describe your architecture or paste an image..."}
                 className="bg-transparent text-white placeholder:text-zinc-500 w-full resize-none outline-none text-sm px-1 min-h-[50px] dark-scrollbar"
+                disabled={isTokenLimitReached}
               />
 
               <div className="flex items-center justify-between mt-2 pt-1">

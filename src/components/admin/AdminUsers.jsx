@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Users, Zap } from 'lucide-react';
-import { loadAllUsers } from '../../utils/firestoreAdmin';
+import { Search, Users, Zap, RotateCcw } from 'lucide-react';
+import { loadAllUsers, resetUserTokens } from '../../utils/firestoreAdmin';
 
 const AdminUsers = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [resetting, setResetting] = useState(null);
 
   useEffect(() => {
     loadAllUsers().then(u => { setUsers(u); setLoading(false); }).catch(e => { console.error('Load users failed:', e); setLoading(false); });
@@ -30,6 +31,21 @@ const AdminUsers = () => {
     if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
     if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
     return n.toString();
+  };
+
+  const handleResetTokens = async (uid) => {
+    if (!confirm('Reset this user\'s token usage to 0?')) return;
+    setResetting(uid);
+    try {
+      await resetUserTokens(uid);
+      setUsers(prev => prev.map(u =>
+        u.id === uid ? { ...u, tokenUsage: { promptTokens: 0, outputTokens: 0, totalTokens: 0, requestCount: 0 } } : u
+      ));
+    } catch (e) {
+      console.error('Reset tokens failed:', e);
+      alert('Failed to reset tokens.');
+    }
+    setResetting(null);
   };
 
   const totalTokensAll = users.reduce((sum, u) => sum + (u.tokenUsage?.totalTokens || 0), 0);
@@ -86,6 +102,7 @@ const AdminUsers = () => {
                 <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Requests</th>
                 <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Signed Up</th>
                 <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Last Active</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -123,6 +140,23 @@ const AdminUsers = () => {
                     <td className="px-6 py-4 text-sm text-slate-600">{requests || '—'}</td>
                     <td className="px-6 py-4 text-sm text-slate-500">{formatDate(u.createdAt)}</td>
                     <td className="px-6 py-4 text-sm text-slate-500">{formatTime(u.lastUsageAt || u.lastLoginAt)}</td>
+                    <td className="px-6 py-4">
+                      {tokens > 0 && (
+                        <button
+                          onClick={() => handleResetTokens(u.id)}
+                          disabled={resetting === u.id}
+                          className="px-2.5 py-1.5 text-xs font-medium text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1"
+                          title="Reset token usage"
+                        >
+                          {resetting === u.id ? (
+                            <div className="w-3.5 h-3.5 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <RotateCcw className="w-3.5 h-3.5" />
+                          )}
+                          Reset
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 );
               })}

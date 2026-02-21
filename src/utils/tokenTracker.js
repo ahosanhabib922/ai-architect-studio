@@ -1,5 +1,14 @@
-import { doc, setDoc, increment } from 'firebase/firestore';
+import { doc, getDoc, setDoc, increment } from 'firebase/firestore';
 import { db } from '../config/firebase';
+
+/** Load user's current token usage from Firestore */
+export const getUserTokenUsage = async (uid) => {
+  if (!uid) return 0;
+  try {
+    const snap = await getDoc(doc(db, 'users', uid));
+    return snap.exists() ? (snap.data()?.tokenUsage?.totalTokens || 0) : 0;
+  } catch { return 0; }
+};
 
 /** Atomically add token usage to user's profile in Firestore */
 export const trackTokenUsage = async (uid, usage) => {
