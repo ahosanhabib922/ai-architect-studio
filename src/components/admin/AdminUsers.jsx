@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Users } from 'lucide-react';
+import { Search, Users, Zap } from 'lucide-react';
 import { loadAllUsers } from '../../utils/firestoreAdmin';
 
 const AdminUsers = () => {
@@ -25,6 +25,15 @@ const AdminUsers = () => {
     return formatDate(ts);
   };
 
+  const formatTokens = (n) => {
+    if (!n) return '0';
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+    return n.toString();
+  };
+
+  const totalTokensAll = users.reduce((sum, u) => sum + (u.tokenUsage?.totalTokens || 0), 0);
+
   const filtered = users.filter(u =>
     u.displayName?.toLowerCase().includes(search.toLowerCase()) ||
     u.email?.toLowerCase().includes(search.toLowerCase())
@@ -37,6 +46,12 @@ const AdminUsers = () => {
           <h1 className="text-2xl font-bold text-slate-800">Users</h1>
           <p className="text-sm text-slate-500 mt-1">{users.length} registered users</p>
         </div>
+        {totalTokensAll > 0 && (
+          <div className="flex items-center gap-2 px-4 py-2 bg-[#A78BFA]/10 rounded-xl">
+            <Zap className="w-4 h-4 text-[#A78BFA]" />
+            <span className="text-sm font-semibold text-[#A78BFA]">{formatTokens(totalTokensAll)} total tokens</span>
+          </div>
+        )}
       </div>
 
       {/* Search */}
@@ -67,30 +82,50 @@ const AdminUsers = () => {
               <tr className="border-b border-slate-100">
                 <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">User</th>
                 <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Email</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Tokens Used</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Requests</th>
                 <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Signed Up</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Last Login</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Last Active</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map(u => (
-                <tr key={u.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      {u.photoURL ? (
-                        <img src={u.photoURL} alt="" className="w-9 h-9 rounded-full" />
-                      ) : (
-                        <div className="w-9 h-9 rounded-full bg-[#A78BFA]/10 flex items-center justify-center text-[#A78BFA] text-sm font-bold">
-                          {(u.displayName || u.email || '?')[0].toUpperCase()}
+              {filtered.map(u => {
+                const tokens = u.tokenUsage?.totalTokens || 0;
+                const requests = u.tokenUsage?.requestCount || 0;
+                return (
+                  <tr key={u.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        {u.photoURL ? (
+                          <img src={u.photoURL} alt="" className="w-9 h-9 rounded-full" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-full bg-[#A78BFA]/10 flex items-center justify-center text-[#A78BFA] text-sm font-bold">
+                            {(u.displayName || u.email || '?')[0].toUpperCase()}
+                          </div>
+                        )}
+                        <span className="text-sm font-medium text-slate-800">{u.displayName || '—'}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-600">{u.email}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1.5">
+                        {tokens > 0 && <Zap className="w-3.5 h-3.5 text-amber-500" />}
+                        <span className={`text-sm font-medium ${tokens > 0 ? 'text-slate-800' : 'text-slate-400'}`}>
+                          {formatTokens(tokens)}
+                        </span>
+                      </div>
+                      {tokens > 0 && (
+                        <div className="text-[10px] text-slate-400 mt-0.5">
+                          {formatTokens(u.tokenUsage?.promptTokens || 0)} in / {formatTokens(u.tokenUsage?.outputTokens || 0)} out
                         </div>
                       )}
-                      <span className="text-sm font-medium text-slate-800">{u.displayName || '—'}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-600">{u.email}</td>
-                  <td className="px-6 py-4 text-sm text-slate-500">{formatDate(u.createdAt)}</td>
-                  <td className="px-6 py-4 text-sm text-slate-500">{formatTime(u.lastLoginAt)}</td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-600">{requests || '—'}</td>
+                    <td className="px-6 py-4 text-sm text-slate-500">{formatDate(u.createdAt)}</td>
+                    <td className="px-6 py-4 text-sm text-slate-500">{formatTime(u.lastUsageAt || u.lastLoginAt)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

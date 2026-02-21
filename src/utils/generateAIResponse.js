@@ -30,6 +30,7 @@ const buildBody = (parts, systemInstruction) => JSON.stringify({
 });
 
 // --- Non-streaming (used for element AI edit, React export, etc.) ---
+// Returns { text, usage: { promptTokens, outputTokens, totalTokens } }
 export const generateAIResponse = async (prompt, systemInstruction, attachments = [], model = 'gemini-3-flash-preview') => {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
@@ -44,7 +45,16 @@ export const generateAIResponse = async (prompt, systemInstruction, attachments 
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      const meta = data.usageMetadata || {};
+      return {
+        text,
+        usage: {
+          promptTokens: meta.promptTokenCount || 0,
+          outputTokens: meta.candidatesTokenCount || 0,
+          totalTokens: meta.totalTokenCount || 0,
+        }
+      };
     } catch (err) {
       if (retries > 0) {
         await new Promise(r => setTimeout(r, delay));
@@ -58,6 +68,7 @@ export const generateAIResponse = async (prompt, systemInstruction, attachments 
 };
 
 // --- Real-time streaming (used for main generation) ---
+// Returns { text, usage: { promptTokens, outputTokens, totalTokens } }
 export const generateAIResponseStream = async (prompt, systemInstruction, attachments = [], model = 'gemini-3-flash-preview', onChunk, signal) => {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${apiKey}&alt=sse`;
   const parts = buildParts(prompt, attachments);
@@ -75,6 +86,7 @@ export const generateAIResponseStream = async (prompt, systemInstruction, attach
   const decoder = new TextDecoder();
   let accumulated = '';
   let buffer = '';
+  let usage = { promptTokens: 0, outputTokens: 0, totalTokens: 0 };
 
   while (true) {
     const { done, value } = await reader.read();
@@ -96,10 +108,19 @@ export const generateAIResponseStream = async (prompt, systemInstruction, attach
             accumulated += text;
             onChunk(accumulated);
           }
+          // usageMetadata comes in the last chunk
+          if (data.usageMetadata) {
+            const meta = data.usageMetadata;
+            usage = {
+              promptTokens: meta.promptTokenCount || 0,
+              outputTokens: meta.candidatesTokenCount || 0,
+              totalTokens: meta.totalTokenCount || 0,
+            };
+          }
         } catch { /* skip malformed chunk */ }
       }
     }
   }
 
-  return accumulated;
+  return { text: accumulated, usage };
 };

@@ -22,6 +22,7 @@ import { replaceImagesInFiles } from '../utils/replaceImages';
 import { GOOGLE_FONTS } from '../config/fonts';
 import { useAuth } from '../contexts/AuthContext';
 import { loadSessionsFromFirestore, saveSessionToFirestore, deleteSessionFromFirestore } from '../utils/firestoreSessions';
+import { trackTokenUsage } from '../utils/tokenTracker';
 import Accordion from './ui/Accordion';
 import Field from './ui/Field';
 import Input from './ui/Input';
@@ -494,8 +495,9 @@ const StudioWorkspace = () => {
     const prompt = `You are an expert HTML/Tailwind CSS editor. Edit the following HTML element based on this instruction: "${elementPrompt}". CURRENT ELEMENT HTML: ${selectedElement.outerHTML} RULES: Return ONLY the modified HTML for this specific element. Keep the exact same 'data-ai-id="${selectedElement.id}"' attribute intact. Do NOT wrap your response in markdown fences.`;
 
     try {
-      const response = await generateAIResponse(prompt, "You are a specialized HTML element editor.");
-      let cleanHTML = response.replace(/^```html\n?/, '').replace(/\n?```$/, '').trim();
+      const { text, usage } = await generateAIResponse(prompt, "You are a specialized HTML element editor.");
+      if (user && usage) trackTokenUsage(user.uid, usage);
+      let cleanHTML = text.replace(/^```html\n?/, '').replace(/\n?```$/, '').trim();
       sendToIframe({ type: 'UPDATE_ELEMENT', id: selectedElement.id, newHtml: cleanHTML });
       setElementPrompt('');
     } catch (e) {
@@ -668,12 +670,15 @@ RULES FOR THIS EDIT:
         }
       };
 
-      await generateAIResponseStream(
+      const streamResult = await generateAIResponseStream(
         fullPrompt, sysInstruction, currentAttachments,
         'gemini-3-flash-preview',
         parseAndUpdateFiles,
         abortController.signal
       );
+
+      // Track token usage
+      if (user && streamResult.usage) trackTokenUsage(user.uid, streamResult.usage);
 
       // Post-process: replace placeholder images with real Unsplash photos
       setGenerationStatus('Enhancing images...');
@@ -787,7 +792,8 @@ RULES FOR THIS EDIT:
         HTML TO CONVERT:
         ${cleanHTMLForAI}`;
 
-        const response = await generateAIResponse(prompt, "You are an expert React developer specializing in HTML-to-JSX conversion.");
+        const { text: response, usage } = await generateAIResponse(prompt, "You are an expert React developer specializing in HTML-to-JSX conversion.");
+        if (user && usage) trackTokenUsage(user.uid, usage);
         let content = response.replace(/^```(jsx|react|javascript|js)?\n?/, '').replace(/\n?```$/, '').trim();
 
         const blob = new Blob([content], { type: 'text/javascript' });
