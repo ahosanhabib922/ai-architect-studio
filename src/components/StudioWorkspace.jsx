@@ -42,8 +42,8 @@ const StudioWorkspace = () => {
   // Session State — loaded from Firestore
   const [chatSessions, setChatSessions] = useState({});
   const [sessionsLoaded, setSessionsLoaded] = useState(false);
-  const [activeSessionId, setActiveSessionId] = useState(chatId);
-  const activeSessionRef = useRef(chatId);
+  const [activeSessionId, setActiveSessionId] = useState(chatId || null);
+  const activeSessionRef = useRef(chatId || null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Active Workspace Data
@@ -130,28 +130,24 @@ const StudioWorkspace = () => {
   useEffect(() => {
     if (!user) return;
     loadSessionsFromFirestore(user.uid).then(sessions => {
-      if (sessions[chatId]) {
-        setChatSessions(sessions);
-      } else {
-        const newSession = createEmptySession(chatId);
-        sessions[chatId] = newSession;
-        setChatSessions(sessions);
-        saveSessionToFirestore(user.uid, chatId, newSession);
+      setChatSessions(sessions);
+      if (chatId && sessions[chatId]) {
+        const target = sessions[chatId];
+        setMessages(target.messages || DEFAULT_MESSAGES);
+        setGeneratedFiles(target.generatedFiles || {});
+        setActiveFileName(target.activeFileName || '');
+        activeFileNameRef.current = target.activeFileName || '';
+        setHistory(target.history || []);
+        setHistoryIndex(target.historyIndex ?? -1);
       }
-      const target = sessions[chatId];
-      setMessages(target.messages || DEFAULT_MESSAGES);
-      setGeneratedFiles(target.generatedFiles || {});
-      setActiveFileName(target.activeFileName || '');
-      activeFileNameRef.current = target.activeFileName || '';
-      setHistory(target.history || []);
-      setHistoryIndex(target.historyIndex ?? -1);
+      // No chatId = fresh new chat, just keep default state (no Firestore save yet)
       setSessionsLoaded(true);
     });
   }, [user]);
 
   // --- Session Syncing & Management (debounced, persists to Firestore) ---
   useEffect(() => {
-    if (!user || !sessionsLoaded) return;
+    if (!user || !sessionsLoaded || !activeSessionId) return;
     activeSessionRef.current = activeSessionId;
     clearTimeout(sessionSyncTimerRef.current);
     sessionSyncTimerRef.current = setTimeout(() => {
@@ -175,7 +171,19 @@ const StudioWorkspace = () => {
   // --- Sync URL chatId with activeSessionId ---
   useEffect(() => {
     if (!user || !sessionsLoaded) return;
-    if (chatId && chatId !== activeSessionId) {
+    // /studio (no chatId) = fresh state, no session created yet
+    if (!chatId) {
+      setActiveSessionId(null);
+      activeSessionRef.current = null;
+      setMessages(DEFAULT_MESSAGES);
+      setGeneratedFiles({});
+      setActiveFileName('');
+      activeFileNameRef.current = '';
+      setHistory([]);
+      setHistoryIndex(-1);
+      return;
+    }
+    if (chatId !== activeSessionId) {
       if (chatSessions[chatId]) {
         const target = chatSessions[chatId];
         setActiveSessionId(chatId);
@@ -216,20 +224,17 @@ const StudioWorkspace = () => {
   };
 
   const handleNewChat = () => {
-    const newId = generateChatId();
-    const newChat = createEmptySession(newId);
-    setChatSessions(prev => ({ ...prev, [newId]: newChat }));
-    setActiveSessionId(newId);
-    setMessages(newChat.messages);
-    setGeneratedFiles(newChat.generatedFiles);
-    setActiveFileName(newChat.activeFileName);
-    activeFileNameRef.current = newChat.activeFileName;
-    setHistory(newChat.history);
-    setHistoryIndex(newChat.historyIndex);
+    setActiveSessionId(null);
+    activeSessionRef.current = null;
+    setMessages(DEFAULT_MESSAGES);
+    setGeneratedFiles({});
+    setActiveFileName('');
+    activeFileNameRef.current = '';
+    setHistory([]);
+    setHistoryIndex(-1);
     setIsSidebarOpen(false);
     closeFloatingEditor();
-    navigate(`/studio/${newId}`);
-    if (user) saveSessionToFirestore(user.uid, newId, newChat);
+    navigate('/studio');
   };
 
   const handleDeleteChat = (id, e) => {
@@ -551,7 +556,19 @@ const StudioWorkspace = () => {
 
     const userPrompt = input;
     const currentAttachments = [...attachments];
-    const currentSessionId = activeSessionId;
+
+    // Lazy chat creation — generate ID on first message
+    let currentSessionId = activeSessionId;
+    if (!currentSessionId) {
+      const newId = generateChatId();
+      const newSession = createEmptySession(newId);
+      setChatSessions(prev => ({ ...prev, [newId]: newSession }));
+      setActiveSessionId(newId);
+      activeSessionRef.current = newId;
+      currentSessionId = newId;
+      navigate(`/studio/${newId}`, { replace: true });
+      if (user) saveSessionToFirestore(user.uid, newId, newSession);
+    }
 
     setInput('');
     setAttachments([]);

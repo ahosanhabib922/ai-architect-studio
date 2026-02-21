@@ -4,7 +4,6 @@ import LandingPage from './components/LandingPage';
 import StudioWorkspace from './components/StudioWorkspace';
 import AdminPortal from './components/admin/AdminPortal';
 import { customStyles } from './styles/customStyles';
-import { generateChatId } from './config/constants';
 import { useAuth } from './contexts/AuthContext';
 
 const ADMIN_HOST = 'dashboard.expritor.com';
@@ -86,7 +85,7 @@ export default function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/studio" element={
               <ProtectedRoute>
-                <Navigate to={`/studio/${generateChatId()}`} replace />
+                <StudioWorkspace />
               </ProtectedRoute>
             } />
             <Route path="/studio/:chatId" element={
