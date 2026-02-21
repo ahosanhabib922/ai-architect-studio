@@ -4,7 +4,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, googleProvider, db } from '../config/firebase';
 
 const AuthContext = createContext(null);
-const ADMIN_EMAIL = 'ahosanhabib@gmail.com';
+const ADMIN_EMAIL = 'ahosanhabib922@gmail.com';
 
 export const useAuth = () => useContext(AuthContext);
 
