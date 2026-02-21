@@ -502,6 +502,7 @@ const StudioWorkspace = () => {
 
   const handleElementAIEdit = async () => {
     if (!elementPrompt.trim() || isEditingElement) return;
+    if (isTokenLimitReached) { alert('Token limit reached. Contact admin to reset.'); return; }
     setIsEditingElement(true);
     const prompt = `You are an expert HTML/Tailwind CSS editor. Edit the following HTML element based on this instruction: "${elementPrompt}". CURRENT ELEMENT HTML: ${selectedElement.outerHTML} RULES: Return ONLY the modified HTML for this specific element. Keep the exact same 'data-ai-id="${selectedElement.id}"' attribute intact. Do NOT wrap your response in markdown fences.`;
 
@@ -794,6 +795,7 @@ RULES FOR THIS EDIT:
       }
 
     } else if (format === 'react') {
+      if (isTokenLimitReached) { alert('Token limit reached. Contact admin to reset.'); setShowExportMenu(false); return; }
       setShowExportMenu(false);
       setIsExportingReact(true);
 
