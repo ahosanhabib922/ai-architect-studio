@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Plus, Upload, Code, Palette, Type, FileText, Check, Eye, Copy, Download, Search, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Upload, Code, Palette, Type, FileText, Check, Search, X, Clipboard, Download, ArrowRight } from 'lucide-react';
 import { TEMPLATES } from '../../config/templates';
 
 const COLOR_PRESETS = [
@@ -81,16 +81,14 @@ const analyzeHtml = (html) => {
 
 const AdminTemplates = () => {
   const [search, setSearch] = useState('');
-  const [showGenerator, setShowGenerator] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
-  // Generator state
+  // Form state
   const [formName, setFormName] = useState('');
   const [formDesc, setFormDesc] = useState('');
   const [formColor, setFormColor] = useState('bg-white');
   const [formHtml, setFormHtml] = useState('');
-  const [output, setOutput] = useState(null);
-  const [copied, setCopied] = useState(false);
-  const [downloaded, setDownloaded] = useState(false);
+  const [done, setDone] = useState(false);
   const fileInputRef = useRef(null);
 
   const filtered = TEMPLATES.filter(t =>
@@ -98,37 +96,30 @@ const AdminTemplates = () => {
     t.desc.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleGenerate = () => {
+  const fileName = formName.trim().replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '') + '.html';
+  const templateId = formName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const configLine = `  { id: '${templateId}', name: '${formName.trim()}', desc: '${formDesc.trim()}', color: '${formColor}', file: '${fileName}' },`;
+
+  const handleAddTemplate = () => {
     if (!formName.trim() || !formHtml.trim()) return;
-    const id = formName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    const fileName = formName.trim().replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '') + '.html';
-    const configLine = `  { id: '${id}', name: '${formName.trim()}', desc: '${formDesc.trim()}', color: '${formColor}', file: '${fileName}' },`;
-    setOutput({ configLine, fileName, id });
-    setCopied(false);
-    setDownloaded(false);
-  };
 
-  const handleCopyConfig = () => {
-    if (!output) return;
-    navigator.clipboard.writeText(output.configLine);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+    // Step 1: Copy config line to clipboard
+    navigator.clipboard.writeText(configLine);
 
-  const handleDownloadHtml = () => {
-    if (!output || !formHtml) return;
+    // Step 2: Download HTML file
     const blob = new Blob([formHtml], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = output.fileName;
+    a.href = url; a.download = fileName;
     document.body.appendChild(a); a.click();
     document.body.removeChild(a); URL.revokeObjectURL(url);
-    setDownloaded(true);
+
+    setDone(true);
   };
 
-  const handleHtmlChange = (html) => {
+  const handleHtmlInput = (html) => {
     setFormHtml(html);
-    setOutput(null);
+    setDone(false);
     if (html.length > 100) {
       const { desc, detectedColor, title } = analyzeHtml(html);
       setFormDesc(desc);
@@ -143,13 +134,10 @@ const AdminTemplates = () => {
     const reader = new FileReader();
     reader.onload = (ev) => {
       const html = ev.target.result;
-      setFormHtml(html);
-      setOutput(null);
-      const { desc, detectedColor, title } = analyzeHtml(html);
-      setFormDesc(desc);
-      setFormColor(detectedColor);
+      handleHtmlInput(html);
       if (!formName) {
-        const name = title || file.name.replace(/\.html?$/i, '').replace(/[-_]+/g, ' ');
+        const parsed = analyzeHtml(html);
+        const name = parsed.title || file.name.replace(/\.html?$/i, '').replace(/[-_]+/g, ' ');
         setFormName(name.charAt(0).toUpperCase() + name.slice(1));
       }
     };
@@ -157,9 +145,8 @@ const AdminTemplates = () => {
     e.target.value = '';
   };
 
-  const resetGenerator = () => {
-    setFormName(''); setFormDesc(''); setFormColor('bg-white'); setFormHtml('');
-    setOutput(null); setCopied(false); setDownloaded(false);
+  const resetForm = () => {
+    setFormName(''); setFormDesc(''); setFormColor('bg-white'); setFormHtml(''); setDone(false);
   };
 
   return (
@@ -170,117 +157,117 @@ const AdminTemplates = () => {
           <p className="text-sm text-slate-500 mt-1">{TEMPLATES.length} design DNA templates</p>
         </div>
         <button
-          onClick={() => setShowGenerator(!showGenerator)}
+          onClick={() => setShowForm(!showForm)}
           className="px-4 py-2 text-sm font-medium text-white bg-[#A78BFA] hover:bg-[#9061F9] rounded-xl transition-colors flex items-center gap-2"
         >
           <Plus className="w-4 h-4" /> Add Template
         </button>
       </div>
 
-      {/* Template Generator (collapsible) */}
-      {showGenerator && (
+      {/* Add Template Form */}
+      {showForm && (
         <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-8">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-sm font-semibold text-slate-700">Template Generator</h2>
-            <button onClick={() => { setShowGenerator(false); resetGenerator(); }} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
+            <h2 className="text-sm font-semibold text-slate-700">Add New Template</h2>
+            <button onClick={() => { setShowForm(false); resetForm(); }} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
               <X className="w-4 h-4" />
             </button>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left - HTML Input */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide flex items-center gap-1.5">
+                  <Code className="w-3.5 h-3.5" /> HTML
+                </label>
+                <div className="flex gap-2">
+                  <input type="file" ref={fileInputRef} accept=".html,.htm" onChange={handleFileUpload} className="hidden" />
+                  <button onClick={() => fileInputRef.current?.click()}
+                    className="px-2.5 py-1 text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg flex items-center gap-1">
+                    <Upload className="w-3 h-3" /> Upload .html
+                  </button>
+                </div>
+              </div>
+              <textarea value={formHtml} onChange={e => handleHtmlInput(e.target.value)}
+                placeholder="Paste full HTML here or upload a file..." rows={10}
+                className="w-full px-3 py-2 bg-slate-950 text-emerald-400 border border-slate-700 rounded-lg text-xs font-mono outline-none focus:border-[#A78BFA] resize-y"
+                spellCheck={false} />
+              {formHtml && <div className="text-[10px] text-slate-400">{(formHtml.length / 1024).toFixed(1)} KB</div>}
+
+              {formHtml && (
+                <div className="border border-slate-200 rounded-lg overflow-hidden">
+                  <div className="text-[10px] text-slate-400 px-2 py-1 bg-slate-50 border-b border-slate-200">Preview</div>
+                  <iframe srcDoc={formHtml} className="w-full h-[140px]" sandbox="allow-same-origin allow-scripts" title="Preview" />
+                </div>
+              )}
+            </div>
+
+            {/* Right - Auto-filled metadata + Action */}
             <div className="space-y-4">
-              {/* Name */}
               <div>
                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide flex items-center gap-1.5 mb-1.5">
                   <Type className="w-3.5 h-3.5" /> Name
                 </label>
-                <input type="text" value={formName} onChange={e => { setFormName(e.target.value); setOutput(null); }}
-                  placeholder="e.g. Luxury Interior" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#A78BFA]" />
+                <input type="text" value={formName} onChange={e => { setFormName(e.target.value); setDone(false); }}
+                  placeholder="Auto-detected or type here..." className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#A78BFA]" />
               </div>
-              {/* Description */}
               <div>
                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide flex items-center gap-1.5 mb-1.5">
-                  <FileText className="w-3.5 h-3.5" /> Description <span className="text-[10px] text-slate-400 font-normal normal-case">(auto)</span>
+                  <FileText className="w-3.5 h-3.5" /> Description
                 </label>
-                <input type="text" value={formDesc} onChange={e => { setFormDesc(e.target.value); setOutput(null); }}
-                  placeholder="Auto-generated from HTML" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#A78BFA]" />
+                <input type="text" value={formDesc} onChange={e => { setFormDesc(e.target.value); setDone(false); }}
+                  placeholder="Auto-generated..." className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#A78BFA]" />
               </div>
-              {/* Color */}
               <div>
                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide flex items-center gap-1.5 mb-1.5">
-                  <Palette className="w-3.5 h-3.5" /> Color <span className="text-[10px] text-slate-400 font-normal normal-case">(auto)</span>
+                  <Palette className="w-3.5 h-3.5" /> Background Color
                 </label>
                 <div className="flex flex-wrap gap-1.5">
                   {COLOR_PRESETS.map(c => (
-                    <button key={c.value} onClick={() => { setFormColor(c.value); setOutput(null); }}
+                    <button key={c.value} onClick={() => { setFormColor(c.value); setDone(false); }}
                       className={`w-7 h-7 rounded-lg border-2 transition-all ${formColor === c.value ? 'border-[#A78BFA] scale-110' : 'border-slate-200 hover:border-slate-300'}`}
                       style={{ backgroundColor: colorMap[c.value] }} title={c.label} />
                   ))}
                 </div>
               </div>
-            </div>
 
-            <div className="space-y-4">
-              {/* HTML */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide flex items-center gap-1.5">
-                    <Code className="w-3.5 h-3.5" /> HTML
-                  </label>
-                  <div className="flex gap-2">
-                    <input type="file" ref={fileInputRef} accept=".html,.htm" onChange={handleFileUpload} className="hidden" />
-                    <button onClick={() => fileInputRef.current?.click()}
-                      className="px-2.5 py-1 text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg flex items-center gap-1">
-                      <Upload className="w-3 h-3" /> Upload
+              {/* One-click action */}
+              <div className="pt-3 border-t border-slate-100">
+                {!done ? (
+                  <button onClick={handleAddTemplate} disabled={!formName.trim() || !formHtml.trim()}
+                    className="w-full px-5 py-3 text-sm font-medium text-white bg-[#A78BFA] hover:bg-[#9061F9] rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
+                    <Download className="w-4 h-4" /> Download HTML + Copy Config
+                  </button>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span className="text-sm text-emerald-700 font-medium">Done! Now do these 2 steps:</span>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-start gap-2.5 p-3 bg-slate-50 rounded-lg">
+                        <span className="w-5 h-5 bg-[#A78BFA] text-white text-xs font-bold rounded-full flex items-center justify-center shrink-0 mt-0.5">1</span>
+                        <div>
+                          <div className="font-medium text-slate-700">Move downloaded <code className="text-xs bg-slate-200 px-1 py-0.5 rounded">{fileName}</code> to</div>
+                          <code className="text-xs text-slate-500 mt-0.5 block">public/templates/</code>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2.5 p-3 bg-slate-50 rounded-lg">
+                        <span className="w-5 h-5 bg-[#A78BFA] text-white text-xs font-bold rounded-full flex items-center justify-center shrink-0 mt-0.5">2</span>
+                        <div>
+                          <div className="font-medium text-slate-700">Paste config line <span className="text-slate-400">(already copied)</span> into</div>
+                          <code className="text-xs text-slate-500 mt-0.5 block">src/config/templates.js</code>
+                        </div>
+                      </div>
+                    </div>
+                    <button onClick={() => { resetForm(); }} className="text-xs text-[#A78BFA] hover:underline mt-1">
+                      Add another template
                     </button>
                   </div>
-                </div>
-                <textarea value={formHtml} onChange={e => handleHtmlChange(e.target.value)}
-                  placeholder="Paste HTML here..." rows={8}
-                  className="w-full px-3 py-2 bg-slate-950 text-emerald-400 border border-slate-700 rounded-lg text-xs font-mono outline-none focus:border-[#A78BFA] resize-y"
-                  spellCheck={false} />
-                {formHtml && <div className="text-[10px] text-slate-400 mt-1">{(formHtml.length / 1024).toFixed(1)} KB</div>}
+                )}
               </div>
-
-              {/* Preview */}
-              {formHtml && (
-                <div className="border border-slate-200 rounded-lg overflow-hidden">
-                  <iframe srcDoc={formHtml} className="w-full h-[160px]" sandbox="allow-same-origin allow-scripts" title="Preview" />
-                </div>
-              )}
             </div>
-          </div>
-
-          {/* Generate + Output */}
-          <div className="mt-5 pt-5 border-t border-slate-100">
-            <button onClick={handleGenerate} disabled={!formName.trim() || !formHtml.trim()}
-              className="px-5 py-2 text-sm font-medium text-white bg-[#A78BFA] hover:bg-[#9061F9] rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-              <Plus className="w-4 h-4" /> Generate Config
-            </button>
-
-            {output && (
-              <div className="mt-4 space-y-3">
-                <div className="bg-slate-50 rounded-xl p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-slate-600">1. Copy config line → templates.js</span>
-                    <button onClick={handleCopyConfig}
-                      className={`px-2.5 py-1 text-xs font-medium rounded-lg flex items-center gap-1 ${copied ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-200 hover:bg-slate-300 text-slate-600'}`}>
-                      {copied ? <><Check className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
-                    </button>
-                  </div>
-                  <pre className="bg-slate-950 text-emerald-400 text-xs font-mono p-3 rounded-lg overflow-x-auto">{output.configLine}</pre>
-                </div>
-                <div className="bg-slate-50 rounded-xl p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-slate-600">2. Download HTML → public/templates/</span>
-                    <button onClick={handleDownloadHtml}
-                      className={`px-2.5 py-1 text-xs font-medium rounded-lg flex items-center gap-1 ${downloaded ? 'bg-emerald-50 text-emerald-600' : 'bg-[#A78BFA] hover:bg-[#9061F9] text-white'}`}>
-                      {downloaded ? <><Check className="w-3 h-3" /> Done</> : <><Download className="w-3 h-3" /> {output.fileName}</>}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}
