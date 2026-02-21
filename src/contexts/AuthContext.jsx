@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }) => {
           };
           if (!snap.exists()) profile.createdAt = Date.now();
           await setDoc(userRef, profile, { merge: true });
-        } catch {}
+        } catch (e) { console.error('Profile save failed:', e); }
       }
     });
     return unsubscribe;

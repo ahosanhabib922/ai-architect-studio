@@ -8,7 +8,7 @@ const AdminUsers = () => {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    loadAllUsers().then(u => { setUsers(u); setLoading(false); }).catch(() => setLoading(false));
+    loadAllUsers().then(u => { setUsers(u); setLoading(false); }).catch(e => { console.error('Load users failed:', e); setLoading(false); });
   }, []);
 
   const formatDate = (ts) => {
