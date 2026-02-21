@@ -301,7 +301,7 @@ const AdminTemplates = () => {
                 src={`/templates/${t.file}`}
                 className="w-[200%] h-[200%] origin-top-left pointer-events-none absolute top-0 left-0"
                 style={{ transform: 'scale(0.5)' }}
-                sandbox="allow-same-origin"
+                sandbox="allow-same-origin allow-scripts"
                 title={t.name}
                 loading="lazy"
               />
