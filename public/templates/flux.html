@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flux Health Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/iconify-icon@2.3.0/dist/iconify-icon.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1A1A1A; /* Match sidebar background for seamless transition */
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .dashboard-container {
+            width: 100%;
+            height: 100vh;
+            background-color: #1A1A1A;
+            border-radius: 0; /* Full width: removed rounding */
+            display: flex;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 280px;
+            padding: 40px 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .main-content {
+            flex: 1;
+            background-color: #F3F4F6;
+            margin: 0; /* Full width: removed floating margin */
+            border-radius: 0; /* Full width: removed rounding */
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        /* Hatched pattern for sleep chart */
+        .hatched-bar {
+            background: repeating-linear-gradient(
+                45deg,
+                rgba(255, 255, 255, 0.1),
+                rgba(255, 255, 255, 0.1) 2px,
+                transparent 2px,
+                transparent 8px
+            );
+            background-color: #2D2D2D;
+        }
+
+        .active-bar {
+            background: #D9FF5F;
+        }
+
+        .purple-bar {
+            background: #B6A1E5;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e5e7eb;
+            border-radius: 10px;
+        }
+
+        /* Circle Overlap Magic */
+        .energy-circle {
+            transition: transform 0.3s ease;
+        }
+        .energy-circle:hover {
+            transform: scale(1.05);
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <!-- SIDEBAR -->
+        <aside class="sidebar flex flex-col">
+            <div>
+                <!-- Logo -->
+                <div class="flex items-center gap-2 mb-12 px-4">
+                    <div class="w-8 h-8 bg-[#D9FF5F] rounded-lg flex items-center justify-center">
+                        <iconify-icon icon="lucide:leaf" class="text-black" width="20"></iconify-icon>
+                    </div>
+                    <span class="text-white text-2xl font-bold tracking-tight">flux</span>
+                </div>
+
+                <!-- Nav -->
+                <nav class="space-y-2">
+                    <a href="#" class="flex items-center justify-between bg-white text-black px-5 py-3 rounded-2xl font-medium group transition-all">
+                        <div class="flex items-center gap-3">
+                            <iconify-icon icon="lucide:layout-grid" width="22"></iconify-icon>
+                            <span>Dashboard</span>
+                        </div>
+                        <span class="bg-[#D9FF5F] text-[10px] px-2 py-0.5 rounded-full font-bold">3</span>
+                    </a>
+                    <a href="#" class="flex items-center gap-3 text-gray-400 px-5 py-3 rounded-2xl hover:bg-white/5 transition-all">
+                        <iconify-icon icon="lucide:home" width="22"></iconify-icon>
+                        <span>Home</span>
+                    </a>
+                    <a href="#" class="flex items-center gap-3 text-gray-400 px-5 py-3 rounded-2xl hover:bg-white/5 transition-all">
+                        <iconify-icon icon="lucide:apple" width="22"></iconify-icon>
+                        <span>Nutrition</span>
+                    </a>
+                    <a href="#" class="flex items-center justify-between text-gray-400 px-5 py-3 rounded-2xl hover:bg-white/5 transition-all">
+                        <div class="flex items-center gap-3">
+                            <iconify-icon icon="lucide:bar-chart-3" width="22"></iconify-icon>
+                            <span>Reports</span>
+                        </div>
+                        <span class="bg-[#D9FF5F] text-black text-[10px] px-2 py-0.5 rounded-full font-bold">1</span>
+                    </a>
+                    <a href="#" class="flex items-center gap-3 text-gray-400 px-5 py-3 rounded-2xl hover:bg-white/5 transition-all">
+                        <iconify-icon icon="lucide:users" width="22"></iconify-icon>
+                        <span>Users</span>
+                    </a>
+                    <a href="#" class="flex items-center gap-3 text-gray-400 px-5 py-3 rounded-2xl hover:bg-white/5 transition-all">
+                        <iconify-icon icon="lucide:message-square" width="22"></iconify-icon>
+                        <span>Messages</span>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Upgrade Card -->
+            <div class="relative bg-[#D9FF5F] rounded-[32px] p-6 mt-auto overflow-hidden group">
+                <div class="relative z-10">
+                    <h3 class="text-black font-bold text-lg mb-1">Upgrade to Pro</h3>
+                    <p class="text-black/60 text-xs leading-relaxed mb-4">Upgrade your account for a fuller experience.</p>
+                    <button class="w-full bg-[#1A1A1A] text-white py-3 rounded-2xl text-sm font-semibold hover:bg-black transition-all">
+                        Upgrade Now
+                    </button>
+                </div>
+                <!-- Visual Elements -->
+                <div class="absolute -top-4 -right-2 opacity-90 group-hover:scale-110 transition-transform duration-500">
+                    <img src="https://images.unsplash.com/photo-1517976487492-5750f3195933?ixid=M3w4NzM2MDV8MHwxfHNlYXJjaHwxfHxyb2NrZXR8ZW58MHwwfHx8MTc3MTY5MjMwMHww&ixlib=rb-4.1.0&w=120&h=120&fit=crop&auto=format&q=80" alt="upgrade" class="w-24 h-24 object-contain mix-blend-multiply">
+                </div>
+                <div class="absolute bottom-10 left-4 w-2 h-2 bg-purple-500 rounded-full blur-[2px]"></div>
+                <div class="absolute bottom-12 left-10 w-3 h-3 bg-pink-500 rounded-full blur-[1px]"></div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content custom-scrollbar">
+            <!-- Header -->
+            <header class="flex items-center justify-between mb-8">
+                <div class="flex items-center gap-3">
+                    <img src="https://i.pravatar.cc/150?u=lucas" alt="avatar" class="w-12 h-12 rounded-full border-2 border-white shadow-sm">
+                    <div>
+                        <div class="flex items-center gap-1">
+                            <h4 class="font-bold text-gray-900 leading-none">Lucas Bennett</h4>
+                            <iconify-icon icon="lucide:chevron-down" width="16" class="text-gray-400"></iconify-icon>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">bennet02@gmail.com</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <div class="relative">
+                        <input type="text" placeholder="Search..." class="bg-white border-none rounded-full py-3 px-12 text-sm w-72 shadow-sm focus:ring-2 ring-[#D9FF5F] outline-none">
+                        <iconify-icon icon="lucide:search" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" width="18"></iconify-icon>
+                    </div>
+                    <button class="w-11 h-11 bg-white rounded-full flex items-center justify-center shadow-sm relative">
+                        <iconify-icon icon="lucide:bell" width="20" class="text-gray-600"></iconify-icon>
+                        <span class="absolute top-2 right-2 w-4 h-4 bg-[#D9FF5F] text-[9px] font-bold border-2 border-white rounded-full flex items-center justify-center">2</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Title & Date -->
+            <div class="flex items-end justify-between mb-8">
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-900 tracking-tight mb-2">Health Overview</h1>
+                    <p class="text-gray-500 text-sm">Take control of your health today!</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="text-gray-400 text-sm font-medium">12 July, 2024</span>
+                    <button class="flex items-center gap-2 bg-white px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm border border-gray-100">
+                        Today
+                        <iconify-icon icon="lucide:chevron-down" width="18"></iconify-icon>
+                    </button>
+                </div>
+            </div>
+
+            <!-- DASHBOARD GRID -->
+            <div class="grid grid-cols-12 gap-6">
+                
+                <!-- Energy Used Card -->
+                <div class="col-span-4 bg-white rounded-[32px] p-8 shadow-sm relative group overflow-hidden">
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center">
+                                <iconify-icon icon="lucide:zap" class="text-gray-900"></iconify-icon>
+                            </div>
+                            <h3 class="font-bold text-gray-900">Energy Used</h3>
+                        </div>
+                        <button class="text-gray-300 hover:text-gray-600"><iconify-icon icon="lucide:more-vertical"></iconify-icon></button>
+                    </div>
+
+                    <div class="flex items-baseline gap-1 mb-8">
+                        <span class="text-4xl font-bold">4,3k</span>
+                        <span class="text-gray-400 text-sm">kcal today</span>
+                        <span class="ml-2 bg-[#D9FF5F] text-[10px] px-2 py-0.5 rounded-full font-bold text-gray-900">+5%</span>
+                    </div>
+
+                    <!-- Overlapping Circles -->
+                    <div class="relative h-64 mb-8 flex items-center justify-center">
+                        <div class="energy-circle absolute left-4 w-44 h-44 rounded-full bg-[#B6A1E5] flex flex-col items-center justify-center text-gray-900 shadow-xl">
+                            <span class="text-2xl font-bold">2,6k</span>
+                            <span class="text-[10px] uppercase tracking-wider font-semibold opacity-60">kcal</span>
+                        </div>
+                        <div class="energy-circle absolute right-6 top-6 w-32 h-32 rounded-full bg-[#1A1A1A] flex flex-col items-center justify-center text-white shadow-xl">
+                            <span class="text-xl font-bold">1,2k</span>
+                            <span class="text-[10px] uppercase tracking-wider font-semibold opacity-40">kcal</span>
+                        </div>
+                        <div class="energy-circle absolute bottom-4 left-1/2 -translate-x-1/4 w-24 h-24 rounded-full bg-[#D9FF5F] flex flex-col items-center justify-center text-gray-900 shadow-xl border-4 border-white">
+                            <span class="text-lg font-bold">500</span>
+                            <span class="text-[10px] uppercase tracking-wider font-semibold opacity-60">kcal</span>
+                        </div>
+                    </div>
+
+                    <!-- Progress Stats -->
+                    <div class="space-y-4">
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs font-bold text-gray-900">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-lg">45</span><span class="text-gray-400 font-medium">%</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    Running <div class="w-1.5 h-1.5 rounded-full bg-[#B6A1E5]"></div>
+                                </div>
+                            </div>
+                            <div class="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-[#B6A1E5] rounded-full" style="width: 45%"></div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs font-bold text-gray-900">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-lg">30</span><span class="text-gray-400 font-medium">%</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    Workouts <div class="w-1.5 h-1.5 rounded-full bg-black"></div>
+                                </div>
+                            </div>
+                            <div class="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-black rounded-full" style="width: 30%"></div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs font-bold text-gray-900">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-lg">25</span><span class="text-gray-400 font-medium">%</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    Walking <div class="w-1.5 h-1.5 rounded-full bg-[#D9FF5F]"></div>
+                                </div>
+                            </div>
+                            <div class="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-[#D9FF5F] rounded-full" style="width: 25%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column (Stacked Cards) -->
+                <div class="col-span-8 grid grid-cols-2 gap-6">
+                    
+                    <!-- Heart Rate Card -->
+                    <div class="bg-white rounded-[32px] p-6 shadow-sm">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex items-center gap-2">
+                                <iconify-icon icon="lucide:heart" class="text-gray-400" width="20"></iconify-icon>
+                                <h3 class="font-bold text-gray-900 text-sm">Heart Rate</h3>
+                            </div>
+                            <button class="text-gray-300"><iconify-icon icon="lucide:more-vertical"></iconify-icon></button>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-baseline gap-1">
+                                <span class="text-3xl font-bold text-gray-900">62</span>
+                                <span class="text-gray-400 text-xs font-medium">bpm</span>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[10px] text-gray-400 font-semibold uppercase">Avg</p>
+                                <p class="text-sm font-bold">78 Bpm</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Wellness Index Card -->
+                    <div class="bg-white rounded-[32px] p-6 shadow-sm row-span-2">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex items-center gap-2">
+                                <iconify-icon icon="lucide:percent" class="text-gray-400" width="18"></iconify-icon>
+                                <h3 class="font-bold text-gray-900 text-sm">Wellness Index</h3>
+                            </div>
+                            <button class="text-gray-300"><iconify-icon icon="lucide:more-vertical"></iconify-icon></button>
+                        </div>
+                        <div class="flex items-baseline gap-1 mb-6">
+                            <span class="text-3xl font-bold text-gray-900">78</span>
+                            <span class="text-gray-400 text-xs font-medium">%</span>
+                            <span class="ml-2 bg-[#D9FF5F] text-[9px] px-2 py-0.5 rounded-full font-bold">+10%</span>
+                        </div>
+
+                        <!-- Dot Matrix Chart -->
+                        <div class="grid grid-cols-8 gap-2" x-data="{}">
+                            <template x-for="i in 40">
+                                <div class="w-3 h-3 rounded-full" :class="Math.random() > 0.4 ? 'bg-[#B6A1E5]/40' : 'bg-[#B6A1E5]'"></div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Activity Card -->
+                    <div class="bg-white rounded-[32px] p-6 shadow-sm">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex items-center gap-2">
+                                <iconify-icon icon="lucide:walking" class="text-gray-400" width="20"></iconify-icon>
+                                <h3 class="font-bold text-gray-900 text-sm">Activity</h3>
+                            </div>
+                            <button class="text-gray-300"><iconify-icon icon="lucide:more-vertical"></iconify-icon></button>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-baseline gap-1">
+                                <span class="text-3xl font-bold text-gray-900">5,8</span>
+                                <span class="text-gray-400 text-xs font-medium">km</span>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[10px] text-gray-400 font-semibold uppercase">Active</p>
+                                <p class="text-sm font-bold">75 Min</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sleep Analysis Card (Large Bottom) -->
+                    <div class="col-span-2 bg-[#1A1A1A] rounded-[32px] p-8 text-white relative">
+                        <div class="flex justify-between items-center mb-10">
+                            <div class="flex items-center gap-2">
+                                <iconify-icon icon="lucide:moon" class="text-gray-400" width="22"></iconify-icon>
+                                <h3 class="font-bold text-lg">Sleep Analysis</h3>
+                            </div>
+                            <button class="flex items-center gap-2 bg-[#2D2D2D] px-4 py-2 rounded-full text-xs font-medium hover:bg-white/10 transition-all">
+                                Monthly
+                                <iconify-icon icon="lucide:chevron-down"></iconify-icon>
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-12 mb-12">
+                            <div class="flex gap-4">
+                                <div class="w-2 h-10 bg-[#D9FF5F] rounded-full"></div>
+                                <div>
+                                    <div class="flex items-baseline gap-1">
+                                        <span class="text-4xl font-bold">85</span>
+                                        <span class="text-gray-500 font-medium text-lg">%</span>
+                                    </div>
+                                    <p class="text-gray-500 text-xs mt-1">Sleep Efficiency</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-4">
+                                <div class="w-2 h-10 bg-[#B6A1E5] rounded-full"></div>
+                                <div>
+                                    <div class="flex items-baseline gap-1">
+                                        <span class="text-4xl font-bold">7h 15m</span>
+                                    </div>
+                                    <p class="text-gray-500 text-xs mt-1">Sleep Duration</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bar Chart -->
+                        <div class="flex items-end justify-between h-40 gap-4">
+                            <div class="flex flex-col items-center gap-3 w-full">
+                                <div class="w-full h-16 hatched-bar rounded-t-xl opacity-40"></div>
+                                <span class="text-[10px] text-gray-600 font-bold uppercase">Jun</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-3 w-full">
+                                <div class="w-full h-24 hatched-bar rounded-t-xl opacity-60"></div>
+                                <span class="text-[10px] text-gray-600 font-bold uppercase">Jul</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-3 w-full">
+                                <div class="w-full h-20 hatched-bar rounded-t-xl opacity-40"></div>
+                                <span class="text-[10px] text-gray-600 font-bold uppercase">Aug</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-3 w-full">
+                                <div class="w-full h-32 active-bar rounded-t-xl relative group">
+                                    <div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-white text-black px-2 py-1 rounded-md text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">7.2h</div>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <span class="text-[10px] text-white font-bold uppercase">Sept</span>
+                                    <iconify-icon icon="lucide:arrow-up-right" class="text-gray-400" width="10"></iconify-icon>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-center gap-3 w-full">
+                                <div class="w-full h-28 purple-bar rounded-t-xl"></div>
+                                <span class="text-[10px] text-gray-600 font-bold uppercase">Oct</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-3 w-full">
+                                <div class="w-full h-22 hatched-bar rounded-t-xl opacity-60"></div>
+                                <span class="text-[10px] text-gray-600 font-bold uppercase">Nov</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-3 w-full">
+                                <div class="w-full h-14 hatched-bar rounded-t-xl opacity-30"></div>
+                                <span class="text-[10px] text-gray-600 font-bold uppercase">Dec</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Micro-interaction animations -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add slight staggered entrance
+            const cards = document.querySelectorAll('.col-span-4, .col-span-8 > div');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'all 0.6s cubic-bezier(0.23, 1, 0.32, 1)';
+                
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 100 * index);
+            });
+        });
+    </script>
+</body>
+</html>
