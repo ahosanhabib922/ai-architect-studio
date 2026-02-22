@@ -162,8 +162,8 @@ const AdminGenerations = () => {
 
       {/* HTML Preview Modal */}
       {previewHtml && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-8" onClick={() => setPreviewHtml(null)}>
-          <div className="bg-white rounded-2xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setPreviewHtml(null)}>
+          <div className="bg-white w-full h-full flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
               <span className="text-sm font-semibold text-slate-700">{previewHtml.title}</span>
               <button onClick={() => setPreviewHtml(null)} className="p-1 hover:bg-slate-100 rounded-lg"><X className="w-4 h-4 text-slate-500" /></button>
