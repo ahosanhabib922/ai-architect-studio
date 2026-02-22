@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 /** Load instructions from Firestore config/instructions */
@@ -29,13 +29,13 @@ export const setUserTokenLimit = async (uid, limit) => {
 
 /** Load all user profiles for admin view */
 export const loadAllUsers = async () => {
-  const snap = await getDocs(query(collection(db, 'users'), orderBy('lastLoginAt', 'desc')));
+  const snap = await getDocs(collection(db, 'users'));
   const users = [];
   snap.forEach(d => {
     const data = d.data();
     if (data.email) users.push({ id: d.id, ...data });
   });
-  return users;
+  return users.sort((a, b) => (b.lastLoginAt || 0) - (a.lastLoginAt || 0));
 };
 
 /** Load all generations (sessions) across all users for admin view */
