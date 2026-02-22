@@ -37,3 +37,32 @@ export const loadAllUsers = async () => {
   });
   return users;
 };
+
+/** Load all generations (sessions) across all users for admin view */
+export const loadAllGenerations = async () => {
+  const users = await loadAllUsers();
+  const generations = [];
+  for (const user of users) {
+    const sessSnap = await getDocs(query(collection(db, 'users', user.id, 'sessions'), orderBy('createdAt', 'desc')));
+    sessSnap.forEach(d => {
+      const data = d.data();
+      const msgs = data.messages || [];
+      const firstUserMsg = msgs.find(m => m.role === 'user');
+      if (!firstUserMsg) return; // skip empty sessions
+      generations.push({
+        id: d.id,
+        uid: user.id,
+        userName: user.displayName || user.email || '—',
+        userPhoto: user.photoURL || null,
+        title: data.title || 'Untitled',
+        prompt: firstUserMsg.content || '',
+        template: firstUserMsg.template || null,
+        messageCount: msgs.filter(m => m.role === 'user').length,
+        fileCount: Object.keys(data.generatedFiles || {}).length,
+        createdAt: data.createdAt || null,
+        updatedAt: data.updatedAt || null,
+      });
+    });
+  }
+  return generations.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+};
