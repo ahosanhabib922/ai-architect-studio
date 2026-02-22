@@ -58,6 +58,7 @@ export const loadAllGenerations = async () => {
         prompt: firstUserMsg.content || '',
         template: firstUserMsg.template || null,
         messageCount: msgs.filter(m => m.role === 'user').length,
+        generatedFiles: data.generatedFiles || {},
         fileCount: Object.keys(data.generatedFiles || {}).length,
         createdAt: data.createdAt || null,
         updatedAt: data.updatedAt || null,
