@@ -23,6 +23,7 @@ import { GOOGLE_FONTS } from '../config/fonts';
 import { useAuth } from '../contexts/AuthContext';
 import { loadSessionsFromFirestore, saveSessionToFirestore, deleteSessionFromFirestore } from '../utils/firestoreSessions';
 import { trackTokenUsage, getUserTokenInfo } from '../utils/tokenTracker';
+import PlanSelector from './PlanSelector';
 import Accordion from './ui/Accordion';
 import Field from './ui/Field';
 import Input from './ui/Input';
@@ -101,6 +102,8 @@ const StudioWorkspace = () => {
   const [liveSystemInstruction, setLiveSystemInstruction] = useState(null);
   const [tokenLimit, setTokenLimit] = useState(0); // 0 = unlimited
   const [userTokensUsed, setUserTokensUsed] = useState(0);
+  const [userPlanId, setUserPlanId] = useState(null);
+  const [showPlanSelector, setShowPlanSelector] = useState(false);
 
   const [unsplashQuery, setUnsplashQuery] = useState('');
 
@@ -121,9 +124,10 @@ const StudioWorkspace = () => {
   // --- Load user's token usage + per-user limit ---
   useEffect(() => {
     if (!user) return;
-    getUserTokenInfo(user.uid).then(({ used, limit }) => {
+    getUserTokenInfo(user.uid).then(({ used, limit, planId }) => {
       setUserTokensUsed(used);
       setTokenLimit(limit);
+      setUserPlanId(planId);
     }).catch(() => {});
   }, [user]);
 
@@ -582,7 +586,7 @@ const StudioWorkspace = () => {
     if (isTokenLimitReached) {
       setMessages(prev => [...prev, {
         role: 'model', type: 'error',
-        content: 'You have reached your token usage limit. Please contact the admin to continue.'
+        content: 'You have reached your token usage limit. Please upgrade your plan to continue.'
       }]);
       return;
     }
@@ -1020,7 +1024,7 @@ RULES FOR THIS EDIT:
                         </button>
                       </div>
                       {tokenLimit > 0 && (
-                        <div className="space-y-1">
+                        <div className="space-y-1.5">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1">
                               <Zap className={`w-3 h-3 ${isTokenLimitReached ? 'text-red-500' : 'text-amber-500'}`} />
@@ -1038,6 +1042,14 @@ RULES FOR THIS EDIT:
                               style={{ width: `${tokenUsagePercent}%` }}
                             />
                           </div>
+                          {isTokenLimitReached && (
+                            <button
+                              onClick={() => setShowPlanSelector(true)}
+                              className="w-full py-1.5 text-[10px] font-semibold text-white bg-[#A78BFA] hover:bg-[#9061F9] rounded-lg transition-colors"
+                            >
+                              Upgrade Plan
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1263,8 +1275,11 @@ RULES FOR THIS EDIT:
               )}
 
               {isTokenLimitReached && (
-                <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 mb-2">
-                  <span className="text-xs text-red-400">Token limit reached. Contact admin to reset.</span>
+                <div className="flex items-center justify-between bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 mb-2">
+                  <span className="text-xs text-red-400">Token limit reached.</span>
+                  <button onClick={() => setShowPlanSelector(true)} className="text-xs font-semibold text-[#A78BFA] hover:text-white transition-colors">
+                    Upgrade Plan
+                  </button>
                 </div>
               )}
 
@@ -1868,6 +1883,20 @@ RULES FOR THIS EDIT:
             </div>
           </div>
         </div>
+      )}
+
+      {/* Plan Selector Modal */}
+      {showPlanSelector && (
+        <PlanSelector
+          user={user}
+          currentPlanId={userPlanId}
+          onClose={() => setShowPlanSelector(false)}
+          onPlanChanged={(plan) => {
+            setUserPlanId(plan.id);
+            setTokenLimit(plan.tokenLimit);
+            setShowPlanSelector(false);
+          }}
+        />
       )}
     </div>
   );

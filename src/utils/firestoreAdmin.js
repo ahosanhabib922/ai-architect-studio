@@ -38,6 +38,27 @@ export const loadAllUsers = async () => {
   return users.sort((a, b) => (b.lastLoginAt || 0) - (a.lastLoginAt || 0));
 };
 
+/** Load plans from Firestore */
+export const loadPlans = async () => {
+  const snap = await getDoc(doc(db, 'config', 'plans'));
+  if (!snap.exists()) return [];
+  return snap.data().plans || [];
+};
+
+/** Save plans to Firestore */
+export const savePlans = async (plans) => {
+  await setDoc(doc(db, 'config', 'plans'), { plans, updatedAt: Date.now() });
+};
+
+/** Enroll a user in a plan — sets planId + tokenLimit */
+export const enrollUserInPlan = async (uid, planId, tokenLimit) => {
+  await setDoc(doc(db, 'users', uid), {
+    planId,
+    tokenLimit,
+    planChangedAt: Date.now(),
+  }, { merge: true });
+};
+
 /** Load all generations (sessions) across all users for admin view */
 export const loadAllGenerations = async () => {
   const users = await loadAllUsers();

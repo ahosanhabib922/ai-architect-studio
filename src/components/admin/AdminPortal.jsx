@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Users, Layout, FileText, ArrowLeft, Box, Shield, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Users, Layout, FileText, ArrowLeft, Box, Shield, Sparkles, Crown } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminDashboard from './AdminDashboard';
 import AdminUsers from './AdminUsers';
 import AdminTemplates from './AdminTemplates';
 import AdminInstructions from './AdminInstructions';
 import AdminGenerations from './AdminGenerations';
+import AdminPlans from './AdminPlans';
 
 const TABS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'users', label: 'Users', icon: Users },
+  { id: 'plans', label: 'Plans', icon: Crown },
   { id: 'generations', label: 'Generations', icon: Sparkles },
   { id: 'templates', label: 'Templates', icon: Layout },
   { id: 'instructions', label: 'Instructions', icon: FileText },
@@ -25,6 +27,7 @@ const AdminPortal = () => {
     switch (activeTab) {
       case 'dashboard': return <AdminDashboard />;
       case 'users': return <AdminUsers />;
+      case 'plans': return <AdminPlans />;
       case 'generations': return <AdminGenerations />;
       case 'templates': return <AdminTemplates />;
       case 'instructions': return <AdminInstructions />;

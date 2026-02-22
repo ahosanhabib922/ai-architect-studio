@@ -30,7 +30,20 @@ export const AuthProvider = ({ children }) => {
             photoURL: firebaseUser.photoURL,
             lastLoginAt: Date.now(),
           };
-          if (!snap.exists()) profile.createdAt = Date.now();
+          if (!snap.exists()) {
+            profile.createdAt = Date.now();
+            // Auto-assign default plan for new users
+            try {
+              const plansSnap = await getDoc(doc(db, 'config', 'plans'));
+              if (plansSnap.exists()) {
+                const defaultPlan = (plansSnap.data().plans || []).find(p => p.isDefault);
+                if (defaultPlan) {
+                  profile.planId = defaultPlan.id;
+                  profile.tokenLimit = defaultPlan.tokenLimit;
+                }
+              }
+            } catch {}
+          }
           await setDoc(userRef, profile, { merge: true });
         } catch (e) { console.error('Profile save failed:', e); }
       }
