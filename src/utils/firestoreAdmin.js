@@ -43,7 +43,7 @@ export const loadAllGenerations = async () => {
   const users = await loadAllUsers();
   const generations = [];
   for (const user of users) {
-    const sessSnap = await getDocs(query(collection(db, 'users', user.id, 'sessions'), orderBy('createdAt', 'desc')));
+    const sessSnap = await getDocs(collection(db, 'users', user.id, 'sessions'));
     sessSnap.forEach(d => {
       const data = d.data();
       const msgs = data.messages || [];
@@ -65,5 +65,5 @@ export const loadAllGenerations = async () => {
       });
     });
   }
-  return generations.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  return generations.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
 };
