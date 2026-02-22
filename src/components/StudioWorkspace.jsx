@@ -118,7 +118,7 @@ const StudioWorkspace = () => {
   useEffect(() => {
     loadInstructionsFromFirestore().then(data => {
       if (data?.systemInstruction) setLiveSystemInstruction(data.systemInstruction);
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
 
   // --- Load user's token usage + per-user limit ---
@@ -128,7 +128,7 @@ const StudioWorkspace = () => {
       setUserTokensUsed(used);
       setTokenLimit(limit);
       setUserPlanId(planId);
-    }).catch(() => {});
+    }).catch(() => { });
   }, [user]);
 
   // --- Fetch Template DNA when selected ---
@@ -168,17 +168,17 @@ const StudioWorkspace = () => {
     clearTimeout(sessionSyncTimerRef.current);
     sessionSyncTimerRef.current = setTimeout(() => {
       setChatSessions(prev => {
-         if (!prev[activeSessionId]) return prev;
-         const currentTitle = prev[activeSessionId].title;
-         let newTitle = currentTitle;
-         if (currentTitle === 'New Design' && messages.length > 1) {
-             const firstUserMsg = messages.find(m => m.role === 'user');
-             if (firstUserMsg) newTitle = firstUserMsg.content.substring(0, 25) + '...';
-         }
-         const updatedSession = { ...prev[activeSessionId], messages, generatedFiles, activeFileName, history, historyIndex, title: newTitle };
-         // Persist to Firestore
-         saveSessionToFirestore(user.uid, activeSessionId, updatedSession);
-         return { ...prev, [activeSessionId]: updatedSession };
+        if (!prev[activeSessionId]) return prev;
+        const currentTitle = prev[activeSessionId].title;
+        let newTitle = currentTitle;
+        if (currentTitle === 'New Design' && messages.length > 1) {
+          const firstUserMsg = messages.find(m => m.role === 'user');
+          if (firstUserMsg) newTitle = firstUserMsg.content.substring(0, 25) + '...';
+        }
+        const updatedSession = { ...prev[activeSessionId], messages, generatedFiles, activeFileName, history, historyIndex, title: newTitle };
+        // Persist to Firestore
+        saveSessionToFirestore(user.uid, activeSessionId, updatedSession);
+        return { ...prev, [activeSessionId]: updatedSession };
       });
     }, 500);
     return () => clearTimeout(sessionSyncTimerRef.current);
@@ -257,10 +257,10 @@ const StudioWorkspace = () => {
     e.stopPropagation();
     const remainingIds = Object.keys(chatSessions).filter(k => k !== id);
     if (remainingIds.length === 0) {
-        handleNewChat();
-        setChatSessions(prev => { const { [id]: _, ...rest } = prev; return rest; });
-        if (user) deleteSessionFromFirestore(user.uid, id);
-        return;
+      handleNewChat();
+      setChatSessions(prev => { const { [id]: _, ...rest } = prev; return rest; });
+      if (user) deleteSessionFromFirestore(user.uid, id);
+      return;
     }
     if (activeSessionId === id) handleSwitchChat(remainingIds[0]);
     setChatSessions(prev => { const { [id]: _, ...rest } = prev; return rest; });
@@ -302,9 +302,9 @@ const StudioWorkspace = () => {
         const restoredFiles = history[newIndex];
         setGeneratedFiles(restoredFiles);
         if (!restoredFiles[activeFileName]) {
-            const firstKey = Object.keys(restoredFiles)[0] || '';
-            setActiveFileName(firstKey);
-            activeFileNameRef.current = firstKey;
+          const firstKey = Object.keys(restoredFiles)[0] || '';
+          setActiveFileName(firstKey);
+          activeFileNameRef.current = firstKey;
         }
         return newIndex;
       }
@@ -320,9 +320,9 @@ const StudioWorkspace = () => {
         const restoredFiles = history[newIndex];
         setGeneratedFiles(restoredFiles);
         if (!restoredFiles[activeFileName]) {
-            const firstKey = Object.keys(restoredFiles)[0] || '';
-            setActiveFileName(firstKey);
-            activeFileNameRef.current = firstKey;
+          const firstKey = Object.keys(restoredFiles)[0] || '';
+          setActiveFileName(firstKey);
+          activeFileNameRef.current = firstKey;
         }
         return newIndex;
       }
@@ -435,13 +435,13 @@ const StudioWorkspace = () => {
   };
 
   const handleElementAction = (action) => {
-     setShowElementMenu(false);
-     if (!selectedElement) return;
-     if (action === 'move-up') sendToIframe({ type: 'ACTION_MOVE', id: selectedElement.id, direction: 'up' });
-     else if (action === 'move-down') sendToIframe({ type: 'ACTION_MOVE', id: selectedElement.id, direction: 'down' });
-     else if (action === 'delete') { sendToIframe({ type: 'ACTION_DELETE', id: selectedElement.id }); setSelectedElement(null); }
-     else if (action === 'duplicate') sendToIframe({ type: 'ACTION_DUPLICATE', id: selectedElement.id });
-     else if (action === 'select-parent') sendToIframe({ type: 'ACTION_SELECT_PARENT', id: selectedElement.id });
+    setShowElementMenu(false);
+    if (!selectedElement) return;
+    if (action === 'move-up') sendToIframe({ type: 'ACTION_MOVE', id: selectedElement.id, direction: 'up' });
+    else if (action === 'move-down') sendToIframe({ type: 'ACTION_MOVE', id: selectedElement.id, direction: 'down' });
+    else if (action === 'delete') { sendToIframe({ type: 'ACTION_DELETE', id: selectedElement.id }); setSelectedElement(null); }
+    else if (action === 'duplicate') sendToIframe({ type: 'ACTION_DUPLICATE', id: selectedElement.id });
+    else if (action === 'select-parent') sendToIframe({ type: 'ACTION_SELECT_PARENT', id: selectedElement.id });
   };
 
   const sendToIframe = useCallback((payload) => {
@@ -459,7 +459,7 @@ const StudioWorkspace = () => {
       link.rel = 'stylesheet';
       link.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(/ /g, '+')}&display=swap`;
       doc.head.appendChild(link);
-    } catch {}
+    } catch { }
   }, []);
 
   const handleFontSelect = (fontName) => {
@@ -517,9 +517,9 @@ const StudioWorkspace = () => {
       sendToIframe({ type: 'UPDATE_ELEMENT', id: selectedElement.id, newHtml: cleanHTML });
       setElementPrompt('');
     } catch (e) {
-       setMessages(prev => [...prev, { role: 'model', type: 'error', content: "Failed to edit element: " + e.message }]);
+      setMessages(prev => [...prev, { role: 'model', type: 'error', content: "Failed to edit element: " + e.message }]);
     } finally {
-       setIsEditingElement(false);
+      setIsEditingElement(false);
     }
   };
 
@@ -630,8 +630,8 @@ const StudioWorkspace = () => {
     let fullPrompt = userPrompt;
     // Context aware prompting — enforce surgical edits
     if (Object.keys(generatedFiles).length > 0) {
-        let filesContext = Object.entries(generatedFiles).map(([name, code]) => `[FILE: ${name}]\n${code}`).join('\n\n');
-        fullPrompt = `SURGICAL EDIT REQUEST: "${userPrompt}"
+      let filesContext = Object.entries(generatedFiles).map(([name, code]) => `[FILE: ${name}]\n${code}`).join('\n\n');
+      fullPrompt = `SURGICAL EDIT REQUEST: "${userPrompt}"
 
 EXISTING WORKSPACE FILES (THESE ARE THE SOURCE OF TRUTH):
 ${filesContext}
@@ -707,7 +707,7 @@ RULES FOR THIS EDIT:
 
       const streamResult = await generateAIResponseStream(
         fullPrompt, sysInstruction, currentAttachments,
-        'gemini-3-flash-preview',
+        'gemini-3-pro-preview',
         parseAndUpdateFiles,
         abortController.signal
       );
@@ -784,26 +784,26 @@ RULES FOR THIS EDIT:
       setShowExportMenu(false);
       setIsExportingReact(true);
       try {
-          const JSZip = await loadJSZip();
-          const zip = new JSZip();
-          Object.entries(generatedFiles).forEach(([name, content]) => {
-              // Strip injected script before zipping
-              let clean = content.replace(/<script id="ai-architect-injected">[\s\S]*?<\/script>/, '');
-              zip.file(name, clean);
-          });
-          const blob = await zip.generateAsync({type:"blob"});
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'Architect_Project.zip';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
+        const JSZip = await loadJSZip();
+        const zip = new JSZip();
+        Object.entries(generatedFiles).forEach(([name, content]) => {
+          // Strip injected script before zipping
+          let clean = content.replace(/<script id="ai-architect-injected">[\s\S]*?<\/script>/, '');
+          zip.file(name, clean);
+        });
+        const blob = await zip.generateAsync({ type: "blob" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Architect_Project.zip';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       } catch (err) {
-          setMessages(prev => [...prev, { role: 'model', type: 'error', content: `ZIP Export Error: ${err.message}` }]);
+        setMessages(prev => [...prev, { role: 'model', type: 'error', content: `ZIP Export Error: ${err.message}` }]);
       } finally {
-          setIsExportingReact(false);
+        setIsExportingReact(false);
       }
 
     } else if (format === 'react') {
@@ -842,7 +842,7 @@ RULES FOR THIS EDIT:
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       } catch (error) {
-         setMessages(prev => [...prev, { role: 'model', type: 'error', content: `React Export Error: ${error.message}` }]);
+        setMessages(prev => [...prev, { role: 'model', type: 'error', content: `React Export Error: ${error.message}` }]);
       } finally {
         setIsExportingReact(false);
       }
@@ -973,102 +973,102 @@ RULES FOR THIS EDIT:
 
           {/* Chat History Sidebar Overlay */}
           <div className={`absolute top-0 left-0 w-full h-full bg-white z-[60] flex flex-col transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-              <div className="h-16 border-b border-slate-100 flex items-center justify-between px-4 shrink-0 bg-slate-50/50">
-                  <div className="flex items-center gap-2 font-semibold text-slate-800">
-                      <Clock className="w-5 h-5 text-slate-500" />
-                      Chat History
+            <div className="h-16 border-b border-slate-100 flex items-center justify-between px-4 shrink-0 bg-slate-50/50">
+              <div className="flex items-center gap-2 font-semibold text-slate-800">
+                <Clock className="w-5 h-5 text-slate-500" />
+                Chat History
+              </div>
+              <button onClick={() => setIsSidebarOpen(false)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-md transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-50/30 custom-scrollbar">
+              {Object.values(chatSessions).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).map(chat => (
+                <div
+                  key={chat.id}
+                  onClick={() => handleSwitchChat(chat.id)}
+                  className={`group p-3 rounded-xl cursor-pointer border transition-all ${activeSessionId === chat.id ? 'bg-white border-[#A78BFA] shadow-sm' : 'bg-transparent border-slate-200 hover:bg-white hover:shadow-sm'}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <MessageSquare className={`w-4 h-4 shrink-0 ${activeSessionId === chat.id ? 'text-[#A78BFA]' : 'text-slate-400'}`} />
+                      <span className="text-sm font-medium text-slate-700 truncate">{chat.title}</span>
+                    </div>
+                    <button
+                      onClick={(e) => handleDeleteChat(chat.id, e)}
+                      className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
-                  <button onClick={() => setIsSidebarOpen(false)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-md transition-colors">
-                      <X className="w-5 h-5" />
-                  </button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-50/30 custom-scrollbar">
-                  {Object.values(chatSessions).sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0)).map(chat => (
-                      <div
-                          key={chat.id}
-                          onClick={() => handleSwitchChat(chat.id)}
-                          className={`group p-3 rounded-xl cursor-pointer border transition-all ${activeSessionId === chat.id ? 'bg-white border-[#A78BFA] shadow-sm' : 'bg-transparent border-slate-200 hover:bg-white hover:shadow-sm'}`}
-                      >
-                          <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 overflow-hidden">
-                                  <MessageSquare className={`w-4 h-4 shrink-0 ${activeSessionId === chat.id ? 'text-[#A78BFA]' : 'text-slate-400'}`} />
-                                  <span className="text-sm font-medium text-slate-700 truncate">{chat.title}</span>
-                              </div>
-                              <button
-                                  onClick={(e) => handleDeleteChat(chat.id, e)}
-                                  className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                              >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                          </div>
-                          <div className="text-[10px] text-slate-400 mt-2 ml-6 flex items-center gap-2">
-                              <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-[9px]">{chat.id}</span>
-                              {chat.createdAt && new Date(chat.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                          </div>
-                      </div>
-                  ))}
-              </div>
-              <div className="p-4 border-t border-slate-100 bg-white shrink-0 space-y-3">
-                  <button onClick={handleNewChat} className="w-full flex items-center justify-center gap-2 bg-[#A78BFA] hover:bg-[#9061F9] text-white py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm">
-                      <PlusCircle className="w-4 h-4" /> Start New Design
-                  </button>
-                  {user && (
-                    <div className="px-1 space-y-2">
+                  <div className="text-[10px] text-slate-400 mt-2 ml-6 flex items-center gap-2">
+                    <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-[9px]">{chat.id}</span>
+                    {chat.createdAt && new Date(chat.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 border-t border-slate-100 bg-white shrink-0 space-y-3">
+              <button onClick={handleNewChat} className="w-full flex items-center justify-center gap-2 bg-[#A78BFA] hover:bg-[#9061F9] text-white py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm">
+                <PlusCircle className="w-4 h-4" /> Start New Design
+              </button>
+              {user && (
+                <div className="px-1 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <img src={user.photoURL} alt="" className="w-7 h-7 rounded-full border border-slate-200 shrink-0" referrerPolicy="no-referrer" />
+                      <span className="text-xs text-slate-600 truncate">{user.displayName || user.email}</span>
+                    </div>
+                    <button onClick={() => { logout(); navigate('/'); }} className="text-xs text-slate-400 hover:text-red-500 transition-colors shrink-0" title="Sign Out">
+                      Sign Out
+                    </button>
+                  </div>
+                  {tokenLimit > 0 && (
+                    <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <img src={user.photoURL} alt="" className="w-7 h-7 rounded-full border border-slate-200 shrink-0" referrerPolicy="no-referrer" />
-                          <span className="text-xs text-slate-600 truncate">{user.displayName || user.email}</span>
+                        <div className="flex items-center gap-1">
+                          <Zap className={`w-3 h-3 ${isTokenLimitReached ? 'text-red-500' : 'text-amber-500'}`} />
+                          <span className={`text-[10px] font-medium ${isTokenLimitReached ? 'text-red-600' : 'text-slate-500'}`}>
+                            {formatTokens(userTokensUsed)} / {formatTokens(tokenLimit)}
+                          </span>
                         </div>
-                        <button onClick={() => { logout(); navigate('/'); }} className="text-xs text-slate-400 hover:text-red-500 transition-colors shrink-0" title="Sign Out">
-                          Sign Out
-                        </button>
+                        <span className={`text-[10px] ${isTokenLimitReached ? 'text-red-500 font-semibold' : 'text-slate-400'}`}>
+                          {isTokenLimitReached ? 'Limit reached' : `${Math.round(tokenUsagePercent)}%`}
+                        </span>
                       </div>
-                      {tokenLimit > 0 && (
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1">
-                              <Zap className={`w-3 h-3 ${isTokenLimitReached ? 'text-red-500' : 'text-amber-500'}`} />
-                              <span className={`text-[10px] font-medium ${isTokenLimitReached ? 'text-red-600' : 'text-slate-500'}`}>
-                                {formatTokens(userTokensUsed)} / {formatTokens(tokenLimit)}
-                              </span>
-                            </div>
-                            <span className={`text-[10px] ${isTokenLimitReached ? 'text-red-500 font-semibold' : 'text-slate-400'}`}>
-                              {isTokenLimitReached ? 'Limit reached' : `${Math.round(tokenUsagePercent)}%`}
-                            </span>
-                          </div>
-                          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all ${isTokenLimitReached ? 'bg-red-500' : tokenUsagePercent > 80 ? 'bg-amber-500' : 'bg-[#A78BFA]'}`}
-                              style={{ width: `${tokenUsagePercent}%` }}
-                            />
-                          </div>
-                          {isTokenLimitReached && (
-                            <button
-                              onClick={() => setShowPlanSelector(true)}
-                              className="w-full py-1.5 text-[10px] font-semibold text-white bg-[#A78BFA] hover:bg-[#9061F9] rounded-lg transition-colors"
-                            >
-                              Upgrade Plan
-                            </button>
-                          )}
-                        </div>
+                      <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${isTokenLimitReached ? 'bg-red-500' : tokenUsagePercent > 80 ? 'bg-amber-500' : 'bg-[#A78BFA]'}`}
+                          style={{ width: `${tokenUsagePercent}%` }}
+                        />
+                      </div>
+                      {isTokenLimitReached && (
+                        <button
+                          onClick={() => setShowPlanSelector(true)}
+                          className="w-full py-1.5 text-[10px] font-semibold text-white bg-[#A78BFA] hover:bg-[#9061F9] rounded-lg transition-colors"
+                        >
+                          Upgrade Plan
+                        </button>
                       )}
                     </div>
                   )}
-              </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="h-16 border-b border-slate-100 flex items-center justify-between px-4 shrink-0 relative">
             <div className="flex items-center gap-2 font-semibold text-slate-800">
-                <button onClick={() => setIsSidebarOpen(true)} className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded mr-1">
-                    <Menu className="w-5 h-5" />
-                </button>
-                <Box className="w-5 h-5 text-[#A78BFA]" /> AI Architect
+              <button onClick={() => setIsSidebarOpen(true)} className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded mr-1">
+                <Menu className="w-5 h-5" />
+              </button>
+              <Box className="w-5 h-5 text-[#A78BFA]" /> AI Architect
             </div>
             <div className="flex items-center gap-2">
-                <button onClick={handleNewChat} className="p-1.5 text-slate-500 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 rounded-md transition-colors" title="New Chat">
-                    <Plus className="w-4 h-4" />
-                </button>
-                <button onClick={() => navigate('/')} className="text-xs font-medium text-slate-500 hover:text-slate-900 bg-slate-100 px-3 py-1.5 rounded-md transition-colors">Exit</button>
+              <button onClick={handleNewChat} className="p-1.5 text-slate-500 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 rounded-md transition-colors" title="New Chat">
+                <Plus className="w-4 h-4" />
+              </button>
+              <button onClick={() => navigate('/')} className="text-xs font-medium text-slate-500 hover:text-slate-900 bg-slate-100 px-3 py-1.5 rounded-md transition-colors">Exit</button>
             </div>
           </div>
 
@@ -1077,20 +1077,20 @@ RULES FOR THIS EDIT:
               <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm whitespace-pre-wrap ${msg.role === 'user' ? 'bg-[#A78BFA] text-white rounded-br-none' : msg.type === 'error' ? 'bg-red-50 border border-red-100 text-red-700 rounded-bl-none' : 'bg-white border border-slate-100 text-slate-700 rounded-bl-none'}`}>
                   {msg.type === 'status' ? (
-                     <div className="flex items-center gap-2 font-medium text-emerald-600"><Check className="w-4 h-4" /> {msg.content}</div>
+                    <div className="flex items-center gap-2 font-medium text-emerald-600"><Check className="w-4 h-4" /> {msg.content}</div>
                   ) : msg.type === 'files-complete' ? (
-                     <div className="flex flex-col gap-2">
-                       <div className="flex items-center gap-2 font-medium text-emerald-600">
-                         <Check className="w-4 h-4" /> Generation Complete
-                       </div>
-                       <div className="flex flex-col gap-1.5 mt-1">
-                          {msg.files?.map(f => (
-                            <div key={f} className="text-xs text-slate-600 flex items-center gap-2 bg-slate-50 p-1.5 rounded-md border border-slate-100">
-                               <FileCode className="w-3.5 h-3.5 text-[#A78BFA]"/> {f}
-                            </div>
-                          ))}
-                       </div>
-                     </div>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2 font-medium text-emerald-600">
+                        <Check className="w-4 h-4" /> Generation Complete
+                      </div>
+                      <div className="flex flex-col gap-1.5 mt-1">
+                        {msg.files?.map(f => (
+                          <div key={f} className="text-xs text-slate-600 flex items-center gap-2 bg-slate-50 p-1.5 rounded-md border border-slate-100">
+                            <FileCode className="w-3.5 h-3.5 text-[#A78BFA]" /> {f}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   ) : (
                     <div className="flex flex-col gap-2">
                       {msg.content}
@@ -1126,8 +1126,8 @@ RULES FOR THIS EDIT:
               <div className="flex justify-start">
                 <div className="bg-white border border-slate-100 rounded-2xl rounded-bl-none px-4 py-3 shadow-sm flex flex-col gap-3 min-w-[200px]">
                   <div className="flex items-center gap-3">
-                     <div className="w-4 h-4 rounded-full border-2 border-[#A78BFA] border-t-transparent animate-spin shrink-0"></div>
-                     <span className="text-sm text-slate-700 font-medium">Architecting...</span>
+                    <div className="w-4 h-4 rounded-full border-2 border-[#A78BFA] border-t-transparent animate-spin shrink-0"></div>
+                    <span className="text-sm text-slate-700 font-medium">Architecting...</span>
                   </div>
 
                   {generatingFiles.length > 0 && (
@@ -1253,12 +1253,12 @@ RULES FOR THIS EDIT:
             <div className="bg-[#111111] rounded-2xl p-3 flex flex-col shadow-md border border-zinc-800">
               {selectedTemplateId && (
                 <div className="flex items-center gap-3 bg-[#0d1610] border border-[#1b3120] rounded-xl p-2 pr-10 relative w-max mb-3 shadow-sm">
-                   <div className={`w-14 h-10 ${TEMPLATES.find(t => t.id === selectedTemplateId)?.color} rounded-lg border border-white/10`}></div>
-                   <div className="flex flex-col">
-                      <span className="text-white font-semibold text-sm leading-tight">{TEMPLATES.find(t => t.id === selectedTemplateId)?.name} Preview</span>
-                      <span className="text-zinc-400 text-xs leading-tight mt-0.5">Template</span>
-                   </div>
-                   <button onClick={() => { setSelectedTemplateId(null); setTemplateDNA(''); }} className="absolute top-2 right-2 p-1 text-zinc-500 hover:text-white rounded-md transition-colors"><X className="w-3.5 h-3.5" /></button>
+                  <div className={`w-14 h-10 ${TEMPLATES.find(t => t.id === selectedTemplateId)?.color} rounded-lg border border-white/10`}></div>
+                  <div className="flex flex-col">
+                    <span className="text-white font-semibold text-sm leading-tight">{TEMPLATES.find(t => t.id === selectedTemplateId)?.name} Preview</span>
+                    <span className="text-zinc-400 text-xs leading-tight mt-0.5">Template</span>
+                  </div>
+                  <button onClick={() => { setSelectedTemplateId(null); setTemplateDNA(''); }} className="absolute top-2 right-2 p-1 text-zinc-500 hover:text-white rounded-md transition-colors"><X className="w-3.5 h-3.5" /></button>
                 </div>
               )}
 
@@ -1322,18 +1322,18 @@ RULES FOR THIS EDIT:
             </div>
 
             <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
-               <button
-                  onClick={handleUndo}
-                  disabled={historyIndex <= 0}
-                  className="p-1.5 rounded-md text-slate-500 hover:text-slate-900 hover:bg-white disabled:opacity-40 disabled:hover:bg-transparent transition-all"
-                  title="Undo (Ctrl+Z)"
-               ><Undo className="w-4 h-4" /></button>
-               <button
-                  onClick={handleRedo}
-                  disabled={historyIndex >= history.length - 1}
-                  className="p-1.5 rounded-md text-slate-500 hover:text-slate-900 hover:bg-white disabled:opacity-40 disabled:hover:bg-transparent transition-all"
-                  title="Redo (Ctrl+Y)"
-               ><Redo className="w-4 h-4" /></button>
+              <button
+                onClick={handleUndo}
+                disabled={historyIndex <= 0}
+                className="p-1.5 rounded-md text-slate-500 hover:text-slate-900 hover:bg-white disabled:opacity-40 disabled:hover:bg-transparent transition-all"
+                title="Undo (Ctrl+Z)"
+              ><Undo className="w-4 h-4" /></button>
+              <button
+                onClick={handleRedo}
+                disabled={historyIndex >= history.length - 1}
+                className="p-1.5 rounded-md text-slate-500 hover:text-slate-900 hover:bg-white disabled:opacity-40 disabled:hover:bg-transparent transition-all"
+                title="Redo (Ctrl+Y)"
+              ><Redo className="w-4 h-4" /></button>
             </div>
           </div>
 
@@ -1363,34 +1363,34 @@ RULES FOR THIS EDIT:
 
           {/* Export Controls */}
           <div className="flex items-center gap-4 w-[160px] justify-end">
-             <div className="relative border-r border-slate-200 pr-4">
-               <button onClick={() => setShowExportMenu(!showExportMenu)} disabled={Object.keys(generatedFiles).length === 0 || isExportingReact} className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 disabled:opacity-50">
-                 {isExportingReact ? (
-                   <><div className="w-4 h-4 rounded-full border-2 border-slate-400 border-t-transparent animate-spin"></div> Exporting...</>
-                 ) : (
-                   <><Download className="w-4 h-4" /> Export <ChevronDown className={`w-3 h-3 transition-transform ${showExportMenu ? 'rotate-180' : ''}`} /></>
-                 )}
-               </button>
-               {showExportMenu && !isExportingReact && (
-                 <div className="absolute right-4 top-full mt-3 w-56 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50 animate-fade-in">
-                    <button onClick={() => handleExport('html')} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-b border-slate-100 transition-colors">
-                        <Code className="w-4 h-4 text-[#A78BFA]"/>
-                        <div className="flex flex-col"><span className="leading-tight">Current HTML</span><span className="text-[10px] text-slate-400 leading-tight">({activeFileName})</span></div>
-                    </button>
-                    <button onClick={() => handleExport('react')} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-b border-slate-100 transition-colors">
-                        <Layout className="w-4 h-4 text-blue-500"/>
-                        <div className="flex flex-col"><span className="leading-tight">AI Export React</span><span className="text-[10px] text-slate-400 leading-tight">Convert current tab to JSX</span></div>
-                    </button>
-                    <button onClick={() => handleExport('zip')} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors">
-                        <FolderDown className="w-4 h-4 text-emerald-500"/>
-                        <div className="flex flex-col"><span className="leading-tight">Download All HTML</span><span className="text-[10px] text-slate-400 leading-tight">ZIP Archive ({Object.keys(generatedFiles).length} files)</span></div>
-                    </button>
-                 </div>
-               )}
-             </div>
-             <button onClick={() => setIsFullscreen(!isFullscreen)} className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
-               {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
-             </button>
+            <div className="relative border-r border-slate-200 pr-4">
+              <button onClick={() => setShowExportMenu(!showExportMenu)} disabled={Object.keys(generatedFiles).length === 0 || isExportingReact} className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 disabled:opacity-50">
+                {isExportingReact ? (
+                  <><div className="w-4 h-4 rounded-full border-2 border-slate-400 border-t-transparent animate-spin"></div> Exporting...</>
+                ) : (
+                  <><Download className="w-4 h-4" /> Export <ChevronDown className={`w-3 h-3 transition-transform ${showExportMenu ? 'rotate-180' : ''}`} /></>
+                )}
+              </button>
+              {showExportMenu && !isExportingReact && (
+                <div className="absolute right-4 top-full mt-3 w-56 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50 animate-fade-in">
+                  <button onClick={() => handleExport('html')} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-b border-slate-100 transition-colors">
+                    <Code className="w-4 h-4 text-[#A78BFA]" />
+                    <div className="flex flex-col"><span className="leading-tight">Current HTML</span><span className="text-[10px] text-slate-400 leading-tight">({activeFileName})</span></div>
+                  </button>
+                  <button onClick={() => handleExport('react')} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-b border-slate-100 transition-colors">
+                    <Layout className="w-4 h-4 text-blue-500" />
+                    <div className="flex flex-col"><span className="leading-tight">AI Export React</span><span className="text-[10px] text-slate-400 leading-tight">Convert current tab to JSX</span></div>
+                  </button>
+                  <button onClick={() => handleExport('zip')} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors">
+                    <FolderDown className="w-4 h-4 text-emerald-500" />
+                    <div className="flex flex-col"><span className="leading-tight">Download All HTML</span><span className="text-[10px] text-slate-400 leading-tight">ZIP Archive ({Object.keys(generatedFiles).length} files)</span></div>
+                  </button>
+                </div>
+              )}
+            </div>
+            <button onClick={() => setIsFullscreen(!isFullscreen)} className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
+              {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+            </button>
           </div>
         </div>
 
@@ -1398,13 +1398,13 @@ RULES FOR THIS EDIT:
         {Object.keys(generatedFiles).length > 0 && (
           <div className="flex items-center gap-1 px-4 py-2 bg-slate-50 border-b border-slate-200 overflow-x-auto custom-scrollbar shrink-0 shadow-[inset_0_-2px_4px_rgba(0,0,0,0.02)]">
             {Object.keys(generatedFiles).map(fileName => (
-               <button
-                 key={fileName}
-                 onClick={() => { setActiveFileName(fileName); activeFileNameRef.current = fileName; closeFloatingEditor(); }}
-                 className={`px-3 py-1.5 text-[11px] font-semibold rounded-md transition-all whitespace-nowrap border ${activeFileName === fileName ? 'bg-white border-slate-200 shadow-sm text-[#A78BFA]' : 'bg-transparent border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}
-               >
-                 {fileName}
-               </button>
+              <button
+                key={fileName}
+                onClick={() => { setActiveFileName(fileName); activeFileNameRef.current = fileName; closeFloatingEditor(); }}
+                className={`px-3 py-1.5 text-[11px] font-semibold rounded-md transition-all whitespace-nowrap border ${activeFileName === fileName ? 'bg-white border-slate-200 shadow-sm text-[#A78BFA]' : 'bg-transparent border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}
+              >
+                {fileName}
+              </button>
             ))}
           </div>
         )}
@@ -1416,42 +1416,42 @@ RULES FOR THIS EDIT:
 
               {/* Toolbar & Context Menu Header */}
               <div className="flex items-center justify-between px-3 py-2 bg-[#252525] border-b border-[#2e2e2e] shrink-0 relative">
-                 <div className="flex items-center gap-2">
-                   <div className="flex items-center bg-blue-600 text-white rounded text-[10px] font-bold tracking-wider overflow-hidden shadow-sm">
-                      <span className="px-2 py-1 uppercase">{selectedElement.tagName}</span>
-                      <button onClick={() => handleElementAction('move-up')} className="px-1.5 py-1 hover:bg-blue-700 border-l border-blue-500 transition-colors"><ArrowUp className="w-3 h-3" /></button>
-                      <button onClick={() => handleElementAction('move-down')} className="px-1.5 py-1 hover:bg-blue-700 border-l border-blue-500 transition-colors"><ArrowDown className="w-3 h-3" /></button>
-                   </div>
-                 </div>
-                 <div className="flex items-center gap-1 relative">
-                   <button onClick={() => setShowElementMenu(!showElementMenu)} className="p-1 text-zinc-400 hover:text-white hover:bg-white/10 rounded transition-colors flex items-center justify-center">
-                     <MoreHorizontal className="w-4 h-4" />
-                   </button>
-                   <button onClick={closeFloatingEditor} className="p-1 text-zinc-400 hover:text-white hover:bg-white/10 rounded transition-colors flex items-center justify-center">
-                     <X className="w-4 h-4" />
-                   </button>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center bg-blue-600 text-white rounded text-[10px] font-bold tracking-wider overflow-hidden shadow-sm">
+                    <span className="px-2 py-1 uppercase">{selectedElement.tagName}</span>
+                    <button onClick={() => handleElementAction('move-up')} className="px-1.5 py-1 hover:bg-blue-700 border-l border-blue-500 transition-colors"><ArrowUp className="w-3 h-3" /></button>
+                    <button onClick={() => handleElementAction('move-down')} className="px-1.5 py-1 hover:bg-blue-700 border-l border-blue-500 transition-colors"><ArrowDown className="w-3 h-3" /></button>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 relative">
+                  <button onClick={() => setShowElementMenu(!showElementMenu)} className="p-1 text-zinc-400 hover:text-white hover:bg-white/10 rounded transition-colors flex items-center justify-center">
+                    <MoreHorizontal className="w-4 h-4" />
+                  </button>
+                  <button onClick={closeFloatingEditor} className="p-1 text-zinc-400 hover:text-white hover:bg-white/10 rounded transition-colors flex items-center justify-center">
+                    <X className="w-4 h-4" />
+                  </button>
 
-                   {/* Dropdown Menu */}
-                   {showElementMenu && (
-                      <div className="absolute top-full right-0 mt-2 w-48 bg-[#1c1c1c] border border-[#2e2e2e] rounded-lg shadow-xl py-1 z-50 animate-fade-in">
-                        <button onClick={() => { const t=document.createElement('textarea'); t.value=selectedElement.outerHTML; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t); setShowElementMenu(false); }} className="w-full text-left px-3 py-1.5 text-xs text-zinc-300 hover:bg-white/10 flex items-center gap-2 transition-colors">
-                          <Copy className="w-3 h-3" /> Copy Code
-                        </button>
-                        <button onClick={() => handleElementAction('duplicate')} className="w-full text-left px-3 py-1.5 text-xs text-zinc-300 hover:bg-white/10 flex items-center gap-2 transition-colors">
-                          <CopyPlus className="w-3 h-3" /> Duplicate
-                        </button>
-                        <button onClick={() => handleElementAction('select-parent')} className="w-full text-left px-3 py-1.5 text-xs text-zinc-300 hover:bg-white/10 flex items-center gap-2 border-b border-[#2e2e2e] pb-2 mb-1 transition-colors">
-                          <CornerLeftUp className="w-3 h-3" /> Select Parent
-                        </button>
-                        <button onClick={() => { setEditorTab('ai'); setShowElementMenu(false); }} className="w-full text-left px-3 py-1.5 text-xs text-[#A78BFA] hover:bg-white/10 flex items-center gap-2 transition-colors">
-                          <Bot className="w-3 h-3" /> Edit with AI
-                        </button>
-                        <button onClick={() => handleElementAction('delete')} className="w-full text-left px-3 py-1.5 text-xs text-red-400 hover:bg-white/10 flex items-center gap-2 transition-colors">
-                          <Trash className="w-3 h-3" /> Delete
-                        </button>
-                      </div>
-                   )}
-                 </div>
+                  {/* Dropdown Menu */}
+                  {showElementMenu && (
+                    <div className="absolute top-full right-0 mt-2 w-48 bg-[#1c1c1c] border border-[#2e2e2e] rounded-lg shadow-xl py-1 z-50 animate-fade-in">
+                      <button onClick={() => { const t = document.createElement('textarea'); t.value = selectedElement.outerHTML; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t); setShowElementMenu(false); }} className="w-full text-left px-3 py-1.5 text-xs text-zinc-300 hover:bg-white/10 flex items-center gap-2 transition-colors">
+                        <Copy className="w-3 h-3" /> Copy Code
+                      </button>
+                      <button onClick={() => handleElementAction('duplicate')} className="w-full text-left px-3 py-1.5 text-xs text-zinc-300 hover:bg-white/10 flex items-center gap-2 transition-colors">
+                        <CopyPlus className="w-3 h-3" /> Duplicate
+                      </button>
+                      <button onClick={() => handleElementAction('select-parent')} className="w-full text-left px-3 py-1.5 text-xs text-zinc-300 hover:bg-white/10 flex items-center gap-2 border-b border-[#2e2e2e] pb-2 mb-1 transition-colors">
+                        <CornerLeftUp className="w-3 h-3" /> Select Parent
+                      </button>
+                      <button onClick={() => { setEditorTab('ai'); setShowElementMenu(false); }} className="w-full text-left px-3 py-1.5 text-xs text-[#A78BFA] hover:bg-white/10 flex items-center gap-2 transition-colors">
+                        <Bot className="w-3 h-3" /> Edit with AI
+                      </button>
+                      <button onClick={() => handleElementAction('delete')} className="w-full text-left px-3 py-1.5 text-xs text-red-400 hover:bg-white/10 flex items-center gap-2 transition-colors">
+                        <Trash className="w-3 h-3" /> Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="px-3 py-2 border-b border-[#2e2e2e] bg-[#111111] overflow-x-auto custom-scrollbar flex items-center gap-1.5 whitespace-nowrap shrink-0">
@@ -1469,293 +1469,293 @@ RULES FOR THIS EDIT:
               </div>
 
               <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#111111]">
-                 {editorTab === 'manual' ? (
-                    <div className="pb-4">
-                      <Accordion title="Structure & ID" defaultOpen={true}>
-                        <div className="space-y-3">
-                          <Field label="ID"><Input value={manualId} onChange={e => handleManualChange('id', e.target.value)} placeholder="e.g. hero-section" /></Field>
-                          <div>
-                            <label className="block text-[10px] text-zinc-500 mb-1">Tailwind Classes</label>
-                            <textarea value={manualClasses} onChange={(e) => handleManualChange('class', e.target.value)} className="w-full bg-[#1c1c1c] border border-[#2e2e2e] rounded text-white text-xs p-2 h-16 resize-none outline-none focus:border-[#A78BFA] custom-scrollbar" spellCheck={false} />
-                          </div>
+                {editorTab === 'manual' ? (
+                  <div className="pb-4">
+                    <Accordion title="Structure & ID" defaultOpen={true}>
+                      <div className="space-y-3">
+                        <Field label="ID"><Input value={manualId} onChange={e => handleManualChange('id', e.target.value)} placeholder="e.g. hero-section" /></Field>
+                        <div>
+                          <label className="block text-[10px] text-zinc-500 mb-1">Tailwind Classes</label>
+                          <textarea value={manualClasses} onChange={(e) => handleManualChange('class', e.target.value)} className="w-full bg-[#1c1c1c] border border-[#2e2e2e] rounded text-white text-xs p-2 h-16 resize-none outline-none focus:border-[#A78BFA] custom-scrollbar" spellCheck={false} />
                         </div>
-                      </Accordion>
+                      </div>
+                    </Accordion>
 
-                      <Accordion title="Content" defaultOpen={true}>
-                        <div className="space-y-3">
-                           {selectedElement?.tagName.toLowerCase() === 'img' ? (
-                             <>
-                               <Field label="Image URL"><Input value={manualSrc} onChange={(e) => handleManualChange('src', e.target.value)} placeholder="https://..." /></Field>
-                               <Field label="Alt Text"><Input value={manualAlt} onChange={(e) => handleManualChange('alt', e.target.value)} placeholder="Image description" /></Field>
-                               <div className="pt-2 border-t border-[#2e2e2e]">
-                                 <label className="block text-[10px] text-zinc-500 mb-1.5">Unsplash Search</label>
-                                 <div className="flex gap-1.5">
-                                   <Input value={unsplashQuery} onChange={(e) => setUnsplashQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleUnsplashSearch(unsplashQuery); }} placeholder="Search photos..." />
-                                   <button onClick={() => handleUnsplashSearch(unsplashQuery)} disabled={isSearchingUnsplash || !unsplashQuery.trim()} className="p-1.5 bg-[#A78BFA] hover:bg-[#9061F9] text-white rounded disabled:opacity-50 transition-colors shrink-0">
-                                     {isSearchingUnsplash ? <div className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin"></div> : <Search className="w-3.5 h-3.5" />}
-                                   </button>
-                                 </div>
-                                 {unsplashResults.length > 0 && (
-                                   <div className="grid grid-cols-3 gap-1.5 mt-2 max-h-[180px] overflow-y-auto custom-scrollbar">
-                                     {unsplashResults.map(photo => (
-                                       <button key={photo.id} onClick={() => handleUnsplashSelect(photo)} className="relative group rounded-md overflow-hidden aspect-square border border-[#2e2e2e] hover:border-[#A78BFA] transition-colors">
-                                         <img src={photo.urls.thumb} alt={photo.alt_description || ''} className="w-full h-full object-cover" />
-                                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                                           <Check className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                                         </div>
-                                       </button>
-                                     ))}
-                                   </div>
-                                 )}
-                               </div>
-                             </>
-                           ) : (
-                             <>
-                               <div>
-                                 <label className="block text-[10px] text-zinc-500 mb-1">Text Content</label>
-                                 <textarea value={manualText} onChange={(e) => handleManualChange('text', e.target.value)} placeholder="Enter text content..." className="w-full bg-[#1c1c1c] border border-[#2e2e2e] rounded text-white text-xs p-2 h-16 resize-none outline-none focus:border-[#A78BFA] custom-scrollbar" spellCheck={false} />
-                               </div>
-                               <div>
-                                 <label className="block text-[10px] text-zinc-500 mb-1">Inner HTML</label>
-                                 <textarea value={manualHtml} onChange={(e) => handleManualChange('html', e.target.value)} placeholder="<span>HTML markup...</span>" className="w-full bg-[#1c1c1c] border border-[#2e2e2e] rounded text-green-300 text-xs p-2 h-20 resize-none outline-none focus:border-[#A78BFA] font-mono custom-scrollbar" spellCheck={false} />
-                               </div>
-                             </>
-                           )}
-                        </div>
-                      </Accordion>
-
-                      {/* ─── TYPOGRAPHY ─── */}
-                      <Accordion title="Typography">
-                        <div className="space-y-3">
-                          <Field label="Font Family">
-                            <div className="relative">
-                              <input
-                                value={showFontPicker ? fontSearch : (manualStyles.fontFamily || '').replace(/"/g, '').split(',')[0].trim() || 'Inherit'}
-                                onFocus={() => { setShowFontPicker(true); setFontSearch(''); }}
-                                onChange={(e) => setFontSearch(e.target.value)}
-                                placeholder="Search fonts..."
-                                className="w-full bg-[#1c1c1c] border border-[#2e2e2e] rounded text-white text-xs px-2 py-1.5 outline-none focus:border-[#A78BFA]"
-                              />
-                              {showFontPicker && (
-                                <>
-                                  <div className="fixed inset-0 z-10" onClick={() => setShowFontPicker(false)} />
-                                  <div className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto bg-[#1c1c1c] border border-[#2e2e2e] rounded shadow-xl custom-scrollbar">
-                                    <button onClick={() => handleFontSelect('')} className="w-full text-left px-2 py-1.5 text-xs text-zinc-400 hover:bg-white/10 hover:text-white transition-colors">Inherit</button>
-                                    {GOOGLE_FONTS.filter(f => f.toLowerCase().includes(fontSearch.toLowerCase())).map(f => (
-                                      <button key={f} onClick={() => handleFontSelect(f)} className="w-full text-left px-2 py-1.5 text-xs text-white hover:bg-[#A78BFA]/30 transition-colors truncate">{f}</button>
-                                    ))}
-                                  </div>
-                                </>
+                    <Accordion title="Content" defaultOpen={true}>
+                      <div className="space-y-3">
+                        {selectedElement?.tagName.toLowerCase() === 'img' ? (
+                          <>
+                            <Field label="Image URL"><Input value={manualSrc} onChange={(e) => handleManualChange('src', e.target.value)} placeholder="https://..." /></Field>
+                            <Field label="Alt Text"><Input value={manualAlt} onChange={(e) => handleManualChange('alt', e.target.value)} placeholder="Image description" /></Field>
+                            <div className="pt-2 border-t border-[#2e2e2e]">
+                              <label className="block text-[10px] text-zinc-500 mb-1.5">Unsplash Search</label>
+                              <div className="flex gap-1.5">
+                                <Input value={unsplashQuery} onChange={(e) => setUnsplashQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleUnsplashSearch(unsplashQuery); }} placeholder="Search photos..." />
+                                <button onClick={() => handleUnsplashSearch(unsplashQuery)} disabled={isSearchingUnsplash || !unsplashQuery.trim()} className="p-1.5 bg-[#A78BFA] hover:bg-[#9061F9] text-white rounded disabled:opacity-50 transition-colors shrink-0">
+                                  {isSearchingUnsplash ? <div className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin"></div> : <Search className="w-3.5 h-3.5" />}
+                                </button>
+                              </div>
+                              {unsplashResults.length > 0 && (
+                                <div className="grid grid-cols-3 gap-1.5 mt-2 max-h-[180px] overflow-y-auto custom-scrollbar">
+                                  {unsplashResults.map(photo => (
+                                    <button key={photo.id} onClick={() => handleUnsplashSelect(photo)} className="relative group rounded-md overflow-hidden aspect-square border border-[#2e2e2e] hover:border-[#A78BFA] transition-colors">
+                                      <img src={photo.urls.thumb} alt={photo.alt_description || ''} className="w-full h-full object-cover" />
+                                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                                        <Check className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                      </div>
+                                    </button>
+                                  ))}
+                                </div>
                               )}
                             </div>
-                          </Field>
-                          <div className="grid grid-cols-2 gap-3">
-                            <Field label="Size"><Input placeholder="16px" value={manualStyles.fontSize || ''} onChange={e => handleStyleChange('fontSize', e.target.value)} /></Field>
-                            <Field label="Line Height"><Input placeholder="24" value={manualStyles.lineHeight || ''} onChange={e => handleStyleChange('lineHeight', e.target.value)} /></Field>
-                          </div>
-                          <Field label="Alignment">
-                            <div className="flex bg-[#1c1c1c] border border-[#2e2e2e] rounded">
-                              {[['left',<AlignLeft className="w-3.5 h-3.5"/>],['center',<AlignCenter className="w-3.5 h-3.5"/>],['right',<AlignRight className="w-3.5 h-3.5"/>],['justify',<AlignJustify className="w-3.5 h-3.5"/>]].map(([val, icon]) => (
-                                <button key={val} onClick={() => handleStyleChange('textAlign', val)} className={`flex-1 p-1.5 flex justify-center transition-colors ${manualStyles.textAlign === val ? 'text-white bg-white/10' : 'text-zinc-500 hover:text-white'}`}>{icon}</button>
-                              ))}
+                          </>
+                        ) : (
+                          <>
+                            <div>
+                              <label className="block text-[10px] text-zinc-500 mb-1">Text Content</label>
+                              <textarea value={manualText} onChange={(e) => handleManualChange('text', e.target.value)} placeholder="Enter text content..." className="w-full bg-[#1c1c1c] border border-[#2e2e2e] rounded text-white text-xs p-2 h-16 resize-none outline-none focus:border-[#A78BFA] custom-scrollbar" spellCheck={false} />
                             </div>
-                          </Field>
-                          <div className="grid grid-cols-2 gap-3">
-                            <Field label="Weight"><Select options={[{label:'Normal',value:'normal'},{label:'300',value:'300'},{label:'400',value:'400'},{label:'500',value:'500'},{label:'600',value:'600'},{label:'700',value:'700'},{label:'800',value:'800'},{label:'900',value:'900'}]} value={manualStyles.fontWeight || 'normal'} onChange={e => handleStyleChange('fontWeight', e.target.value)} /></Field>
-                            <Field label="Style"><Select options={[{label:'Normal',value:'normal'},{label:'Italic',value:'italic'}]} value={manualStyles.fontStyle || 'normal'} onChange={e => handleStyleChange('fontStyle', e.target.value)} /></Field>
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            <Field label="Decoration"><Select options={[{label:'None',value:'none'},{label:'Underline',value:'underline'},{label:'Line-through',value:'line-through'},{label:'Overline',value:'overline'}]} value={(manualStyles.textDecoration || 'none').split(' ')[0]} onChange={e => handleStyleChange('textDecoration', e.target.value)} /></Field>
-                            <Field label="Transform"><Select options={[{label:'None',value:'none'},{label:'Uppercase',value:'uppercase'},{label:'Lowercase',value:'lowercase'},{label:'Capitalize',value:'capitalize'}]} value={manualStyles.textTransform || 'none'} onChange={e => handleStyleChange('textTransform', e.target.value)} /></Field>
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            <Field label="Letter Spacing"><Input placeholder="0" value={manualStyles.letterSpacing || ''} onChange={e => handleStyleChange('letterSpacing', e.target.value)} /></Field>
-                          </div>
-                        </div>
-                      </Accordion>
-
-                      {/* ─── COLORS ─── */}
-                      <Accordion title="Colors">
-                        <div className="space-y-3">
-                          <Field label="Text Color">
-                            <div className="flex items-center gap-2 border border-[#2e2e2e] rounded bg-[#1c1c1c] p-1.5">
-                              <div className="w-6 h-6 rounded border border-zinc-700 shrink-0 relative overflow-hidden" style={{ backgroundColor: manualStyles.color || '#000000' }}>
-                                <input type="color" className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" value={manualStyles.color && manualStyles.color.startsWith('#') ? manualStyles.color : '#000000'} onChange={e => handleStyleChange('color', e.target.value)} />
-                              </div>
-                              <input className="bg-transparent flex-1 text-xs text-white outline-none font-mono" placeholder="#000000" value={manualStyles.color || ''} onChange={e => handleStyleChange('color', e.target.value)} />
+                            <div>
+                              <label className="block text-[10px] text-zinc-500 mb-1">Inner HTML</label>
+                              <textarea value={manualHtml} onChange={(e) => handleManualChange('html', e.target.value)} placeholder="<span>HTML markup...</span>" className="w-full bg-[#1c1c1c] border border-[#2e2e2e] rounded text-green-300 text-xs p-2 h-20 resize-none outline-none focus:border-[#A78BFA] font-mono custom-scrollbar" spellCheck={false} />
                             </div>
-                          </Field>
-                          <Field label="Background">
-                            <div className="flex items-center gap-2 border border-[#2e2e2e] rounded bg-[#1c1c1c] p-1.5">
-                              <div className="w-6 h-6 rounded border border-zinc-700 shrink-0 relative overflow-hidden" style={{ backgroundColor: manualStyles.backgroundColor || 'transparent' }}>
-                                {!manualStyles.backgroundColor && <div className="absolute inset-0 bg-red-500 w-px h-[150%] rotate-45 left-1/2 -top-1"></div>}
-                                <input type="color" className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" value={manualStyles.backgroundColor && manualStyles.backgroundColor.startsWith('#') ? manualStyles.backgroundColor : '#ffffff'} onChange={e => handleStyleChange('backgroundColor', e.target.value)} />
-                              </div>
-                              <input className="bg-transparent flex-1 text-xs text-white outline-none font-mono" placeholder="transparent" value={manualStyles.backgroundColor || ''} onChange={e => handleStyleChange('backgroundColor', e.target.value)} />
+                          </>
+                        )}
+                      </div>
+                    </Accordion>
+
+                    {/* ─── TYPOGRAPHY ─── */}
+                    <Accordion title="Typography">
+                      <div className="space-y-3">
+                        <Field label="Font Family">
+                          <div className="relative">
+                            <input
+                              value={showFontPicker ? fontSearch : (manualStyles.fontFamily || '').replace(/"/g, '').split(',')[0].trim() || 'Inherit'}
+                              onFocus={() => { setShowFontPicker(true); setFontSearch(''); }}
+                              onChange={(e) => setFontSearch(e.target.value)}
+                              placeholder="Search fonts..."
+                              className="w-full bg-[#1c1c1c] border border-[#2e2e2e] rounded text-white text-xs px-2 py-1.5 outline-none focus:border-[#A78BFA]"
+                            />
+                            {showFontPicker && (
+                              <>
+                                <div className="fixed inset-0 z-10" onClick={() => setShowFontPicker(false)} />
+                                <div className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto bg-[#1c1c1c] border border-[#2e2e2e] rounded shadow-xl custom-scrollbar">
+                                  <button onClick={() => handleFontSelect('')} className="w-full text-left px-2 py-1.5 text-xs text-zinc-400 hover:bg-white/10 hover:text-white transition-colors">Inherit</button>
+                                  {GOOGLE_FONTS.filter(f => f.toLowerCase().includes(fontSearch.toLowerCase())).map(f => (
+                                    <button key={f} onClick={() => handleFontSelect(f)} className="w-full text-left px-2 py-1.5 text-xs text-white hover:bg-[#A78BFA]/30 transition-colors truncate">{f}</button>
+                                  ))}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </Field>
+                        <div className="grid grid-cols-2 gap-3">
+                          <Field label="Size"><Input placeholder="16px" value={manualStyles.fontSize || ''} onChange={e => handleStyleChange('fontSize', e.target.value)} /></Field>
+                          <Field label="Line Height"><Input placeholder="24" value={manualStyles.lineHeight || ''} onChange={e => handleStyleChange('lineHeight', e.target.value)} /></Field>
+                        </div>
+                        <Field label="Alignment">
+                          <div className="flex bg-[#1c1c1c] border border-[#2e2e2e] rounded">
+                            {[['left', <AlignLeft className="w-3.5 h-3.5" />], ['center', <AlignCenter className="w-3.5 h-3.5" />], ['right', <AlignRight className="w-3.5 h-3.5" />], ['justify', <AlignJustify className="w-3.5 h-3.5" />]].map(([val, icon]) => (
+                              <button key={val} onClick={() => handleStyleChange('textAlign', val)} className={`flex-1 p-1.5 flex justify-center transition-colors ${manualStyles.textAlign === val ? 'text-white bg-white/10' : 'text-zinc-500 hover:text-white'}`}>{icon}</button>
+                            ))}
+                          </div>
+                        </Field>
+                        <div className="grid grid-cols-2 gap-3">
+                          <Field label="Weight"><Select options={[{ label: 'Normal', value: 'normal' }, { label: '300', value: '300' }, { label: '400', value: '400' }, { label: '500', value: '500' }, { label: '600', value: '600' }, { label: '700', value: '700' }, { label: '800', value: '800' }, { label: '900', value: '900' }]} value={manualStyles.fontWeight || 'normal'} onChange={e => handleStyleChange('fontWeight', e.target.value)} /></Field>
+                          <Field label="Style"><Select options={[{ label: 'Normal', value: 'normal' }, { label: 'Italic', value: 'italic' }]} value={manualStyles.fontStyle || 'normal'} onChange={e => handleStyleChange('fontStyle', e.target.value)} /></Field>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <Field label="Decoration"><Select options={[{ label: 'None', value: 'none' }, { label: 'Underline', value: 'underline' }, { label: 'Line-through', value: 'line-through' }, { label: 'Overline', value: 'overline' }]} value={(manualStyles.textDecoration || 'none').split(' ')[0]} onChange={e => handleStyleChange('textDecoration', e.target.value)} /></Field>
+                          <Field label="Transform"><Select options={[{ label: 'None', value: 'none' }, { label: 'Uppercase', value: 'uppercase' }, { label: 'Lowercase', value: 'lowercase' }, { label: 'Capitalize', value: 'capitalize' }]} value={manualStyles.textTransform || 'none'} onChange={e => handleStyleChange('textTransform', e.target.value)} /></Field>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <Field label="Letter Spacing"><Input placeholder="0" value={manualStyles.letterSpacing || ''} onChange={e => handleStyleChange('letterSpacing', e.target.value)} /></Field>
+                        </div>
+                      </div>
+                    </Accordion>
+
+                    {/* ─── COLORS ─── */}
+                    <Accordion title="Colors">
+                      <div className="space-y-3">
+                        <Field label="Text Color">
+                          <div className="flex items-center gap-2 border border-[#2e2e2e] rounded bg-[#1c1c1c] p-1.5">
+                            <div className="w-6 h-6 rounded border border-zinc-700 shrink-0 relative overflow-hidden" style={{ backgroundColor: manualStyles.color || '#000000' }}>
+                              <input type="color" className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" value={manualStyles.color && manualStyles.color.startsWith('#') ? manualStyles.color : '#000000'} onChange={e => handleStyleChange('color', e.target.value)} />
                             </div>
-                          </Field>
-                        </div>
-                      </Accordion>
-
-                      {/* ─── BORDER ─── */}
-                      <Accordion title="Border">
-                        <div className="space-y-3">
-                          <div className="grid grid-cols-2 gap-3">
-                            <Field label="Width"><Input placeholder="0px" value={manualStyles.borderWidth || ''} onChange={e => handleStyleChange('borderWidth', e.target.value)} /></Field>
-                            <Field label="Style"><Select options={[{label:'None',value:'none'},{label:'Solid',value:'solid'},{label:'Dashed',value:'dashed'},{label:'Dotted',value:'dotted'},{label:'Double',value:'double'}]} value={manualStyles.borderStyle || 'none'} onChange={e => handleStyleChange('borderStyle', e.target.value)} /></Field>
+                            <input className="bg-transparent flex-1 text-xs text-white outline-none font-mono" placeholder="#000000" value={manualStyles.color || ''} onChange={e => handleStyleChange('color', e.target.value)} />
                           </div>
-                          <Field label="Color">
-                            <div className="flex items-center gap-2 border border-[#2e2e2e] rounded bg-[#1c1c1c] p-1.5">
-                              <div className="w-6 h-6 rounded border border-zinc-700 shrink-0 relative overflow-hidden" style={{ backgroundColor: manualStyles.borderColor || 'transparent' }}>
-                                <input type="color" className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" value={manualStyles.borderColor && manualStyles.borderColor.startsWith('#') ? manualStyles.borderColor : '#000000'} onChange={e => handleStyleChange('borderColor', e.target.value)} />
-                              </div>
-                              <input className="bg-transparent flex-1 text-xs text-white outline-none font-mono" placeholder="#ffffff" value={manualStyles.borderColor || ''} onChange={e => handleStyleChange('borderColor', e.target.value)} />
+                        </Field>
+                        <Field label="Background">
+                          <div className="flex items-center gap-2 border border-[#2e2e2e] rounded bg-[#1c1c1c] p-1.5">
+                            <div className="w-6 h-6 rounded border border-zinc-700 shrink-0 relative overflow-hidden" style={{ backgroundColor: manualStyles.backgroundColor || 'transparent' }}>
+                              {!manualStyles.backgroundColor && <div className="absolute inset-0 bg-red-500 w-px h-[150%] rotate-45 left-1/2 -top-1"></div>}
+                              <input type="color" className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" value={manualStyles.backgroundColor && manualStyles.backgroundColor.startsWith('#') ? manualStyles.backgroundColor : '#ffffff'} onChange={e => handleStyleChange('backgroundColor', e.target.value)} />
                             </div>
-                          </Field>
-                          <Field label="Radius"><Input placeholder="0px" value={manualStyles.borderRadius || ''} onChange={e => handleStyleChange('borderRadius', e.target.value)} /></Field>
-                        </div>
-                      </Accordion>
+                            <input className="bg-transparent flex-1 text-xs text-white outline-none font-mono" placeholder="transparent" value={manualStyles.backgroundColor || ''} onChange={e => handleStyleChange('backgroundColor', e.target.value)} />
+                          </div>
+                        </Field>
+                      </div>
+                    </Accordion>
 
-                      {/* ─── SPACING ─── */}
-                      <Accordion title="Spacing">
-                        <div className="space-y-3">
-                          <div className="bg-[#1c1c1c] border border-[#2e2e2e] rounded-lg p-2 relative text-[9px] text-zinc-500 text-center flex flex-col items-center justify-center aspect-square">
-                            <span className="absolute top-1 pointer-events-none">Margin</span>
-                            <div className="w-[80%] h-[80%] border border-zinc-700 bg-[#252525] relative flex flex-col items-center justify-center mt-3">
-                              <span className="absolute top-1 pointer-events-none">Padding</span>
-                              <div className="w-[60%] h-[60%] border border-zinc-600 bg-[#333] flex items-center justify-center mt-2 pointer-events-none"><span className="text-zinc-300">Content</span></div>
-                              <input className="absolute top-4 w-8 bg-transparent text-center text-white outline-none text-[10px]" placeholder="0" value={manualStyles.paddingTop || ''} onChange={e => handleStyleChange('paddingTop', e.target.value)} />
-                              <input className="absolute bottom-1 w-8 bg-transparent text-center text-white outline-none text-[10px]" placeholder="0" value={manualStyles.paddingBottom || ''} onChange={e => handleStyleChange('paddingBottom', e.target.value)} />
-                              <input className="absolute left-1 w-8 bg-transparent text-center text-white outline-none text-[10px]" placeholder="0" value={manualStyles.paddingLeft || ''} onChange={e => handleStyleChange('paddingLeft', e.target.value)} />
-                              <input className="absolute right-1 w-8 bg-transparent text-center text-white outline-none text-[10px]" placeholder="0" value={manualStyles.paddingRight || ''} onChange={e => handleStyleChange('paddingRight', e.target.value)} />
+                    {/* ─── BORDER ─── */}
+                    <Accordion title="Border">
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <Field label="Width"><Input placeholder="0px" value={manualStyles.borderWidth || ''} onChange={e => handleStyleChange('borderWidth', e.target.value)} /></Field>
+                          <Field label="Style"><Select options={[{ label: 'None', value: 'none' }, { label: 'Solid', value: 'solid' }, { label: 'Dashed', value: 'dashed' }, { label: 'Dotted', value: 'dotted' }, { label: 'Double', value: 'double' }]} value={manualStyles.borderStyle || 'none'} onChange={e => handleStyleChange('borderStyle', e.target.value)} /></Field>
+                        </div>
+                        <Field label="Color">
+                          <div className="flex items-center gap-2 border border-[#2e2e2e] rounded bg-[#1c1c1c] p-1.5">
+                            <div className="w-6 h-6 rounded border border-zinc-700 shrink-0 relative overflow-hidden" style={{ backgroundColor: manualStyles.borderColor || 'transparent' }}>
+                              <input type="color" className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" value={manualStyles.borderColor && manualStyles.borderColor.startsWith('#') ? manualStyles.borderColor : '#000000'} onChange={e => handleStyleChange('borderColor', e.target.value)} />
                             </div>
-                            <input className="absolute top-5 w-8 bg-transparent text-center text-white outline-none text-[10px]" placeholder="0" value={manualStyles.marginTop || ''} onChange={e => handleStyleChange('marginTop', e.target.value)} />
-                            <input className="absolute bottom-1 w-8 bg-transparent text-center text-white outline-none text-[10px]" placeholder="0" value={manualStyles.marginBottom || ''} onChange={e => handleStyleChange('marginBottom', e.target.value)} />
-                            <input className="absolute left-1 w-8 bg-transparent text-center text-white outline-none text-[10px]" placeholder="0" value={manualStyles.marginLeft || ''} onChange={e => handleStyleChange('marginLeft', e.target.value)} />
-                            <input className="absolute right-1 w-8 bg-transparent text-center text-white outline-none text-[10px]" placeholder="0" value={manualStyles.marginRight || ''} onChange={e => handleStyleChange('marginRight', e.target.value)} />
+                            <input className="bg-transparent flex-1 text-xs text-white outline-none font-mono" placeholder="#ffffff" value={manualStyles.borderColor || ''} onChange={e => handleStyleChange('borderColor', e.target.value)} />
                           </div>
-                        </div>
-                      </Accordion>
+                        </Field>
+                        <Field label="Radius"><Input placeholder="0px" value={manualStyles.borderRadius || ''} onChange={e => handleStyleChange('borderRadius', e.target.value)} /></Field>
+                      </div>
+                    </Accordion>
 
-                      {/* ─── SIZE ─── */}
-                      <Accordion title="Size">
-                        <div className="space-y-3">
-                          <div className="grid grid-cols-2 gap-3">
-                            <Field label="Width"><Input placeholder="auto" value={manualStyles.width || ''} onChange={e => handleStyleChange('width', e.target.value)} /></Field>
-                            <Field label="Height"><Input placeholder="auto" value={manualStyles.height || ''} onChange={e => handleStyleChange('height', e.target.value)} /></Field>
-                            <Field label="Min W"><Input placeholder="0px" value={manualStyles.minWidth || ''} onChange={e => handleStyleChange('minWidth', e.target.value)} /></Field>
-                            <Field label="Max W"><Input placeholder="none" value={manualStyles.maxWidth || ''} onChange={e => handleStyleChange('maxWidth', e.target.value)} /></Field>
-                            <Field label="Min H"><Input placeholder="0px" value={manualStyles.minHeight || ''} onChange={e => handleStyleChange('minHeight', e.target.value)} /></Field>
-                            <Field label="Max H"><Input placeholder="none" value={manualStyles.maxHeight || ''} onChange={e => handleStyleChange('maxHeight', e.target.value)} /></Field>
+                    {/* ─── SPACING ─── */}
+                    <Accordion title="Spacing">
+                      <div className="space-y-3">
+                        <div className="bg-[#1c1c1c] border border-[#2e2e2e] rounded-lg p-2 relative text-[9px] text-zinc-500 text-center flex flex-col items-center justify-center aspect-square">
+                          <span className="absolute top-1 pointer-events-none">Margin</span>
+                          <div className="w-[80%] h-[80%] border border-zinc-700 bg-[#252525] relative flex flex-col items-center justify-center mt-3">
+                            <span className="absolute top-1 pointer-events-none">Padding</span>
+                            <div className="w-[60%] h-[60%] border border-zinc-600 bg-[#333] flex items-center justify-center mt-2 pointer-events-none"><span className="text-zinc-300">Content</span></div>
+                            <input className="absolute top-4 w-8 bg-transparent text-center text-white outline-none text-[10px]" placeholder="0" value={manualStyles.paddingTop || ''} onChange={e => handleStyleChange('paddingTop', e.target.value)} />
+                            <input className="absolute bottom-1 w-8 bg-transparent text-center text-white outline-none text-[10px]" placeholder="0" value={manualStyles.paddingBottom || ''} onChange={e => handleStyleChange('paddingBottom', e.target.value)} />
+                            <input className="absolute left-1 w-8 bg-transparent text-center text-white outline-none text-[10px]" placeholder="0" value={manualStyles.paddingLeft || ''} onChange={e => handleStyleChange('paddingLeft', e.target.value)} />
+                            <input className="absolute right-1 w-8 bg-transparent text-center text-white outline-none text-[10px]" placeholder="0" value={manualStyles.paddingRight || ''} onChange={e => handleStyleChange('paddingRight', e.target.value)} />
                           </div>
+                          <input className="absolute top-5 w-8 bg-transparent text-center text-white outline-none text-[10px]" placeholder="0" value={manualStyles.marginTop || ''} onChange={e => handleStyleChange('marginTop', e.target.value)} />
+                          <input className="absolute bottom-1 w-8 bg-transparent text-center text-white outline-none text-[10px]" placeholder="0" value={manualStyles.marginBottom || ''} onChange={e => handleStyleChange('marginBottom', e.target.value)} />
+                          <input className="absolute left-1 w-8 bg-transparent text-center text-white outline-none text-[10px]" placeholder="0" value={manualStyles.marginLeft || ''} onChange={e => handleStyleChange('marginLeft', e.target.value)} />
+                          <input className="absolute right-1 w-8 bg-transparent text-center text-white outline-none text-[10px]" placeholder="0" value={manualStyles.marginRight || ''} onChange={e => handleStyleChange('marginRight', e.target.value)} />
                         </div>
-                      </Accordion>
+                      </div>
+                    </Accordion>
 
-                      {/* ─── LAYOUT ─── */}
-                      <Accordion title="Layout">
-                        <div className="space-y-3">
-                          <div className="grid grid-cols-2 gap-3">
-                            <Field label="Display"><Select options={[{label:'Block',value:'block'},{label:'Flex',value:'flex'},{label:'Grid',value:'grid'},{label:'Inline',value:'inline'},{label:'Inline-Block',value:'inline-block'},{label:'Inline-Flex',value:'inline-flex'},{label:'None',value:'none'}]} value={manualStyles.display || 'block'} onChange={e => handleStyleChange('display', e.target.value)} /></Field>
-                            <Field label="Position"><Select options={[{label:'Static',value:'static'},{label:'Relative',value:'relative'},{label:'Absolute',value:'absolute'},{label:'Fixed',value:'fixed'},{label:'Sticky',value:'sticky'}]} value={manualStyles.position || 'static'} onChange={e => handleStyleChange('position', e.target.value)} /></Field>
-                          </div>
-                          <div className="grid grid-cols-4 gap-2">
-                            <Field label="T"><Input placeholder="auto" value={manualStyles.top || ''} onChange={e => handleStyleChange('top', e.target.value)} /></Field>
-                            <Field label="R"><Input placeholder="auto" value={manualStyles.right || ''} onChange={e => handleStyleChange('right', e.target.value)} /></Field>
-                            <Field label="B"><Input placeholder="auto" value={manualStyles.bottom || ''} onChange={e => handleStyleChange('bottom', e.target.value)} /></Field>
-                            <Field label="L"><Input placeholder="auto" value={manualStyles.left || ''} onChange={e => handleStyleChange('left', e.target.value)} /></Field>
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            <Field label="Z-Index"><Input placeholder="auto" value={manualStyles.zIndex || ''} onChange={e => handleStyleChange('zIndex', e.target.value)} /></Field>
-                            <Field label="Overflow"><Select options={[{label:'Visible',value:'visible'},{label:'Hidden',value:'hidden'},{label:'Scroll',value:'scroll'},{label:'Auto',value:'auto'}]} value={manualStyles.overflow || 'visible'} onChange={e => handleStyleChange('overflow', e.target.value)} /></Field>
-                          </div>
-                          <Field label="Visibility"><Select options={[{label:'Visible',value:'visible'},{label:'Hidden',value:'hidden'},{label:'Collapse',value:'collapse'}]} value={manualStyles.visibility || 'visible'} onChange={e => handleStyleChange('visibility', e.target.value)} /></Field>
+                    {/* ─── SIZE ─── */}
+                    <Accordion title="Size">
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <Field label="Width"><Input placeholder="auto" value={manualStyles.width || ''} onChange={e => handleStyleChange('width', e.target.value)} /></Field>
+                          <Field label="Height"><Input placeholder="auto" value={manualStyles.height || ''} onChange={e => handleStyleChange('height', e.target.value)} /></Field>
+                          <Field label="Min W"><Input placeholder="0px" value={manualStyles.minWidth || ''} onChange={e => handleStyleChange('minWidth', e.target.value)} /></Field>
+                          <Field label="Max W"><Input placeholder="none" value={manualStyles.maxWidth || ''} onChange={e => handleStyleChange('maxWidth', e.target.value)} /></Field>
+                          <Field label="Min H"><Input placeholder="0px" value={manualStyles.minHeight || ''} onChange={e => handleStyleChange('minHeight', e.target.value)} /></Field>
+                          <Field label="Max H"><Input placeholder="none" value={manualStyles.maxHeight || ''} onChange={e => handleStyleChange('maxHeight', e.target.value)} /></Field>
                         </div>
-                      </Accordion>
+                      </div>
+                    </Accordion>
 
-                      {/* ─── FLEXBOX ─── */}
-                      <Accordion title="Flexbox">
-                        <div className="space-y-3">
-                          <span className="text-[9px] text-zinc-500 italic">Container props (apply when display is flex/grid)</span>
-                          <div className="grid grid-cols-2 gap-3">
-                            <Field label="Direction"><Select options={[{label:'Row',value:'row'},{label:'Row Reverse',value:'row-reverse'},{label:'Column',value:'column'},{label:'Col Reverse',value:'column-reverse'}]} value={manualStyles.flexDirection || 'row'} onChange={e => handleStyleChange('flexDirection', e.target.value)} /></Field>
-                            <Field label="Wrap"><Select options={[{label:'No Wrap',value:'nowrap'},{label:'Wrap',value:'wrap'},{label:'Wrap Reverse',value:'wrap-reverse'}]} value={manualStyles.flexWrap || 'nowrap'} onChange={e => handleStyleChange('flexWrap', e.target.value)} /></Field>
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            <Field label="Justify"><Select options={[{label:'Start',value:'flex-start'},{label:'Center',value:'center'},{label:'End',value:'flex-end'},{label:'Between',value:'space-between'},{label:'Around',value:'space-around'},{label:'Evenly',value:'space-evenly'}]} value={manualStyles.justifyContent || 'flex-start'} onChange={e => handleStyleChange('justifyContent', e.target.value)} /></Field>
-                            <Field label="Align Items"><Select options={[{label:'Stretch',value:'stretch'},{label:'Start',value:'flex-start'},{label:'Center',value:'center'},{label:'End',value:'flex-end'},{label:'Baseline',value:'baseline'}]} value={manualStyles.alignItems || 'stretch'} onChange={e => handleStyleChange('alignItems', e.target.value)} /></Field>
-                          </div>
-                          <Field label="Gap"><Input placeholder="normal" value={manualStyles.gap || ''} onChange={e => handleStyleChange('gap', e.target.value)} /></Field>
-                          <div className="pt-2 border-t border-[#2e2e2e]">
-                            <span className="text-[9px] text-zinc-500 italic">Child props (this element as flex child)</span>
-                          </div>
-                          <div className="grid grid-cols-3 gap-3">
-                            <Field label="Grow"><Input placeholder="0" value={manualStyles.flexGrow || ''} onChange={e => handleStyleChange('flexGrow', e.target.value)} /></Field>
-                            <Field label="Shrink"><Input placeholder="1" value={manualStyles.flexShrink || ''} onChange={e => handleStyleChange('flexShrink', e.target.value)} /></Field>
-                            <Field label="Basis"><Input placeholder="auto" value={manualStyles.flexBasis || ''} onChange={e => handleStyleChange('flexBasis', e.target.value)} /></Field>
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            <Field label="Align Self"><Select options={[{label:'Auto',value:'auto'},{label:'Start',value:'flex-start'},{label:'Center',value:'center'},{label:'End',value:'flex-end'},{label:'Stretch',value:'stretch'},{label:'Baseline',value:'baseline'}]} value={manualStyles.alignSelf || 'auto'} onChange={e => handleStyleChange('alignSelf', e.target.value)} /></Field>
-                            <Field label="Order"><Input placeholder="0" value={manualStyles.order || ''} onChange={e => handleStyleChange('order', e.target.value)} /></Field>
-                          </div>
+                    {/* ─── LAYOUT ─── */}
+                    <Accordion title="Layout">
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <Field label="Display"><Select options={[{ label: 'Block', value: 'block' }, { label: 'Flex', value: 'flex' }, { label: 'Grid', value: 'grid' }, { label: 'Inline', value: 'inline' }, { label: 'Inline-Block', value: 'inline-block' }, { label: 'Inline-Flex', value: 'inline-flex' }, { label: 'None', value: 'none' }]} value={manualStyles.display || 'block'} onChange={e => handleStyleChange('display', e.target.value)} /></Field>
+                          <Field label="Position"><Select options={[{ label: 'Static', value: 'static' }, { label: 'Relative', value: 'relative' }, { label: 'Absolute', value: 'absolute' }, { label: 'Fixed', value: 'fixed' }, { label: 'Sticky', value: 'sticky' }]} value={manualStyles.position || 'static'} onChange={e => handleStyleChange('position', e.target.value)} /></Field>
                         </div>
-                      </Accordion>
-
-                      {/* ─── EFFECTS ─── */}
-                      <Accordion title="Effects">
-                        <div className="space-y-3">
-                          <Field label={`Opacity — ${Math.round((parseFloat(manualStyles.opacity) || 1) * 100)}%`}>
-                            <input type="range" min="0" max="1" step="0.01" value={manualStyles.opacity || '1'} onChange={e => handleStyleChange('opacity', e.target.value)} className="w-full h-1.5 bg-[#2e2e2e] rounded-full appearance-none cursor-pointer accent-[#A78BFA]" />
-                          </Field>
-                          <Field label="Box Shadow">
-                            <Input placeholder="none" value={manualStyles.boxShadow || ''} onChange={e => handleStyleChange('boxShadow', e.target.value)} />
-                            <div className="flex gap-1 mt-1.5">
-                              {[['None','none'],['SM','0 1px 2px rgba(0,0,0,0.05)'],['MD','0 4px 6px -1px rgba(0,0,0,0.1)'],['LG','0 10px 15px -3px rgba(0,0,0,0.1)'],['XL','0 20px 25px -5px rgba(0,0,0,0.1)']].map(([label, val]) => (
-                                <button key={label} onClick={() => handleStyleChange('boxShadow', val)} className={`flex-1 text-[9px] py-1 rounded border transition-colors ${(manualStyles.boxShadow || 'none') === val ? 'bg-[#A78BFA]/20 border-[#A78BFA] text-white' : 'border-[#2e2e2e] text-zinc-500 hover:text-white hover:border-zinc-600'}`}>{label}</button>
-                              ))}
-                            </div>
-                          </Field>
-                          <Field label="Transform">
-                            <Input placeholder="none" value={manualStyles.transform || ''} onChange={e => handleStyleChange('transform', e.target.value)} />
-                            <div className="flex gap-1 mt-1.5">
-                              {[['None','none'],['45\u00B0','rotate(45deg)'],['90\u00B0','rotate(90deg)'],['Scale+','scale(1.1)'],['Scale-','scale(0.9)']].map(([label, val]) => (
-                                <button key={label} onClick={() => handleStyleChange('transform', val)} className={`flex-1 text-[9px] py-1 rounded border transition-colors ${(manualStyles.transform || 'none') === val ? 'bg-[#A78BFA]/20 border-[#A78BFA] text-white' : 'border-[#2e2e2e] text-zinc-500 hover:text-white hover:border-zinc-600'}`}>{label}</button>
-                              ))}
-                            </div>
-                          </Field>
-                          <Field label="Cursor"><Select options={[{label:'Default',value:'default'},{label:'Pointer',value:'pointer'},{label:'Move',value:'move'},{label:'Text',value:'text'},{label:'Not Allowed',value:'not-allowed'},{label:'Grab',value:'grab'},{label:'Crosshair',value:'crosshair'}]} value={manualStyles.cursor || 'default'} onChange={e => handleStyleChange('cursor', e.target.value)} /></Field>
-                          <Field label="Transition">
-                            <Input placeholder="all" value={manualStyles.transition || ''} onChange={e => handleStyleChange('transition', e.target.value)} />
-                            <div className="flex gap-1 mt-1.5">
-                              {[['None','none'],['Fast','all 0.15s ease'],['Normal','all 0.3s ease'],['Slow','all 0.5s ease']].map(([label, val]) => (
-                                <button key={label} onClick={() => handleStyleChange('transition', val)} className={`flex-1 text-[9px] py-1 rounded border transition-colors ${(manualStyles.transition || '') === val ? 'bg-[#A78BFA]/20 border-[#A78BFA] text-white' : 'border-[#2e2e2e] text-zinc-500 hover:text-white hover:border-zinc-600'}`}>{label}</button>
-                              ))}
-                            </div>
-                          </Field>
+                        <div className="grid grid-cols-4 gap-2">
+                          <Field label="T"><Input placeholder="auto" value={manualStyles.top || ''} onChange={e => handleStyleChange('top', e.target.value)} /></Field>
+                          <Field label="R"><Input placeholder="auto" value={manualStyles.right || ''} onChange={e => handleStyleChange('right', e.target.value)} /></Field>
+                          <Field label="B"><Input placeholder="auto" value={manualStyles.bottom || ''} onChange={e => handleStyleChange('bottom', e.target.value)} /></Field>
+                          <Field label="L"><Input placeholder="auto" value={manualStyles.left || ''} onChange={e => handleStyleChange('left', e.target.value)} /></Field>
                         </div>
-                      </Accordion>
+                        <div className="grid grid-cols-2 gap-3">
+                          <Field label="Z-Index"><Input placeholder="auto" value={manualStyles.zIndex || ''} onChange={e => handleStyleChange('zIndex', e.target.value)} /></Field>
+                          <Field label="Overflow"><Select options={[{ label: 'Visible', value: 'visible' }, { label: 'Hidden', value: 'hidden' }, { label: 'Scroll', value: 'scroll' }, { label: 'Auto', value: 'auto' }]} value={manualStyles.overflow || 'visible'} onChange={e => handleStyleChange('overflow', e.target.value)} /></Field>
+                        </div>
+                        <Field label="Visibility"><Select options={[{ label: 'Visible', value: 'visible' }, { label: 'Hidden', value: 'hidden' }, { label: 'Collapse', value: 'collapse' }]} value={manualStyles.visibility || 'visible'} onChange={e => handleStyleChange('visibility', e.target.value)} /></Field>
+                      </div>
+                    </Accordion>
 
+                    {/* ─── FLEXBOX ─── */}
+                    <Accordion title="Flexbox">
+                      <div className="space-y-3">
+                        <span className="text-[9px] text-zinc-500 italic">Container props (apply when display is flex/grid)</span>
+                        <div className="grid grid-cols-2 gap-3">
+                          <Field label="Direction"><Select options={[{ label: 'Row', value: 'row' }, { label: 'Row Reverse', value: 'row-reverse' }, { label: 'Column', value: 'column' }, { label: 'Col Reverse', value: 'column-reverse' }]} value={manualStyles.flexDirection || 'row'} onChange={e => handleStyleChange('flexDirection', e.target.value)} /></Field>
+                          <Field label="Wrap"><Select options={[{ label: 'No Wrap', value: 'nowrap' }, { label: 'Wrap', value: 'wrap' }, { label: 'Wrap Reverse', value: 'wrap-reverse' }]} value={manualStyles.flexWrap || 'nowrap'} onChange={e => handleStyleChange('flexWrap', e.target.value)} /></Field>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <Field label="Justify"><Select options={[{ label: 'Start', value: 'flex-start' }, { label: 'Center', value: 'center' }, { label: 'End', value: 'flex-end' }, { label: 'Between', value: 'space-between' }, { label: 'Around', value: 'space-around' }, { label: 'Evenly', value: 'space-evenly' }]} value={manualStyles.justifyContent || 'flex-start'} onChange={e => handleStyleChange('justifyContent', e.target.value)} /></Field>
+                          <Field label="Align Items"><Select options={[{ label: 'Stretch', value: 'stretch' }, { label: 'Start', value: 'flex-start' }, { label: 'Center', value: 'center' }, { label: 'End', value: 'flex-end' }, { label: 'Baseline', value: 'baseline' }]} value={manualStyles.alignItems || 'stretch'} onChange={e => handleStyleChange('alignItems', e.target.value)} /></Field>
+                        </div>
+                        <Field label="Gap"><Input placeholder="normal" value={manualStyles.gap || ''} onChange={e => handleStyleChange('gap', e.target.value)} /></Field>
+                        <div className="pt-2 border-t border-[#2e2e2e]">
+                          <span className="text-[9px] text-zinc-500 italic">Child props (this element as flex child)</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3">
+                          <Field label="Grow"><Input placeholder="0" value={manualStyles.flexGrow || ''} onChange={e => handleStyleChange('flexGrow', e.target.value)} /></Field>
+                          <Field label="Shrink"><Input placeholder="1" value={manualStyles.flexShrink || ''} onChange={e => handleStyleChange('flexShrink', e.target.value)} /></Field>
+                          <Field label="Basis"><Input placeholder="auto" value={manualStyles.flexBasis || ''} onChange={e => handleStyleChange('flexBasis', e.target.value)} /></Field>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <Field label="Align Self"><Select options={[{ label: 'Auto', value: 'auto' }, { label: 'Start', value: 'flex-start' }, { label: 'Center', value: 'center' }, { label: 'End', value: 'flex-end' }, { label: 'Stretch', value: 'stretch' }, { label: 'Baseline', value: 'baseline' }]} value={manualStyles.alignSelf || 'auto'} onChange={e => handleStyleChange('alignSelf', e.target.value)} /></Field>
+                          <Field label="Order"><Input placeholder="0" value={manualStyles.order || ''} onChange={e => handleStyleChange('order', e.target.value)} /></Field>
+                        </div>
+                      </div>
+                    </Accordion>
+
+                    {/* ─── EFFECTS ─── */}
+                    <Accordion title="Effects">
+                      <div className="space-y-3">
+                        <Field label={`Opacity — ${Math.round((parseFloat(manualStyles.opacity) || 1) * 100)}%`}>
+                          <input type="range" min="0" max="1" step="0.01" value={manualStyles.opacity || '1'} onChange={e => handleStyleChange('opacity', e.target.value)} className="w-full h-1.5 bg-[#2e2e2e] rounded-full appearance-none cursor-pointer accent-[#A78BFA]" />
+                        </Field>
+                        <Field label="Box Shadow">
+                          <Input placeholder="none" value={manualStyles.boxShadow || ''} onChange={e => handleStyleChange('boxShadow', e.target.value)} />
+                          <div className="flex gap-1 mt-1.5">
+                            {[['None', 'none'], ['SM', '0 1px 2px rgba(0,0,0,0.05)'], ['MD', '0 4px 6px -1px rgba(0,0,0,0.1)'], ['LG', '0 10px 15px -3px rgba(0,0,0,0.1)'], ['XL', '0 20px 25px -5px rgba(0,0,0,0.1)']].map(([label, val]) => (
+                              <button key={label} onClick={() => handleStyleChange('boxShadow', val)} className={`flex-1 text-[9px] py-1 rounded border transition-colors ${(manualStyles.boxShadow || 'none') === val ? 'bg-[#A78BFA]/20 border-[#A78BFA] text-white' : 'border-[#2e2e2e] text-zinc-500 hover:text-white hover:border-zinc-600'}`}>{label}</button>
+                            ))}
+                          </div>
+                        </Field>
+                        <Field label="Transform">
+                          <Input placeholder="none" value={manualStyles.transform || ''} onChange={e => handleStyleChange('transform', e.target.value)} />
+                          <div className="flex gap-1 mt-1.5">
+                            {[['None', 'none'], ['45\u00B0', 'rotate(45deg)'], ['90\u00B0', 'rotate(90deg)'], ['Scale+', 'scale(1.1)'], ['Scale-', 'scale(0.9)']].map(([label, val]) => (
+                              <button key={label} onClick={() => handleStyleChange('transform', val)} className={`flex-1 text-[9px] py-1 rounded border transition-colors ${(manualStyles.transform || 'none') === val ? 'bg-[#A78BFA]/20 border-[#A78BFA] text-white' : 'border-[#2e2e2e] text-zinc-500 hover:text-white hover:border-zinc-600'}`}>{label}</button>
+                            ))}
+                          </div>
+                        </Field>
+                        <Field label="Cursor"><Select options={[{ label: 'Default', value: 'default' }, { label: 'Pointer', value: 'pointer' }, { label: 'Move', value: 'move' }, { label: 'Text', value: 'text' }, { label: 'Not Allowed', value: 'not-allowed' }, { label: 'Grab', value: 'grab' }, { label: 'Crosshair', value: 'crosshair' }]} value={manualStyles.cursor || 'default'} onChange={e => handleStyleChange('cursor', e.target.value)} /></Field>
+                        <Field label="Transition">
+                          <Input placeholder="all" value={manualStyles.transition || ''} onChange={e => handleStyleChange('transition', e.target.value)} />
+                          <div className="flex gap-1 mt-1.5">
+                            {[['None', 'none'], ['Fast', 'all 0.15s ease'], ['Normal', 'all 0.3s ease'], ['Slow', 'all 0.5s ease']].map(([label, val]) => (
+                              <button key={label} onClick={() => handleStyleChange('transition', val)} className={`flex-1 text-[9px] py-1 rounded border transition-colors ${(manualStyles.transition || '') === val ? 'bg-[#A78BFA]/20 border-[#A78BFA] text-white' : 'border-[#2e2e2e] text-zinc-500 hover:text-white hover:border-zinc-600'}`}>{label}</button>
+                            ))}
+                          </div>
+                        </Field>
+                      </div>
+                    </Accordion>
+
+                  </div>
+                ) : (
+                  <div className="p-4 flex flex-col gap-3 h-full">
+                    <p className="text-xs text-zinc-400 mb-2">Use natural language to intelligently update styles, classes, or content without breaking the layout.</p>
+                    <div className="relative flex-1">
+                      <textarea
+                        value={elementPrompt}
+                        onChange={(e) => setElementPrompt(e.target.value)}
+                        placeholder="e.g. Make this a primary button with rounded corners and a purple gradient..."
+                        className="w-full bg-[#1c1c1c] border border-[#2e2e2e] rounded-lg text-white text-xs p-3 pr-10 h-32 resize-none outline-none focus:border-[#A78BFA] custom-scrollbar dark-scrollbar"
+                      />
+                      <button
+                        onClick={handleElementAIEdit}
+                        disabled={isEditingElement || !elementPrompt.trim()}
+                        className="absolute right-3 bottom-3 p-1.5 bg-[#A78BFA] hover:bg-[#9061F9] text-white rounded-md disabled:opacity-50 disabled:hover:bg-[#A78BFA] transition-colors"
+                      >
+                        {isEditingElement ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></div> : <Sparkles className="w-4 h-4" />}
+                      </button>
                     </div>
-                 ) : (
-                    <div className="p-4 flex flex-col gap-3 h-full">
-                       <p className="text-xs text-zinc-400 mb-2">Use natural language to intelligently update styles, classes, or content without breaking the layout.</p>
-                       <div className="relative flex-1">
-                          <textarea
-                            value={elementPrompt}
-                            onChange={(e) => setElementPrompt(e.target.value)}
-                            placeholder="e.g. Make this a primary button with rounded corners and a purple gradient..."
-                            className="w-full bg-[#1c1c1c] border border-[#2e2e2e] rounded-lg text-white text-xs p-3 pr-10 h-32 resize-none outline-none focus:border-[#A78BFA] custom-scrollbar dark-scrollbar"
-                          />
-                          <button
-                            onClick={handleElementAIEdit}
-                            disabled={isEditingElement || !elementPrompt.trim()}
-                            className="absolute right-3 bottom-3 p-1.5 bg-[#A78BFA] hover:bg-[#9061F9] text-white rounded-md disabled:opacity-50 disabled:hover:bg-[#A78BFA] transition-colors"
-                          >
-                             {isEditingElement ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></div> : <Sparkles className="w-4 h-4" />}
-                          </button>
-                       </div>
-                       {isEditingElement && <p className="text-[10px] text-[#A78BFA] text-center animate-pulse">Applying AI changes...</p>}
-                    </div>
-                 )}
+                    {isEditingElement && <p className="text-[10px] text-[#A78BFA] text-center animate-pulse">Applying AI changes...</p>}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1764,7 +1764,7 @@ RULES FOR THIS EDIT:
             <div className="w-full h-full bg-[#1e1e1e] flex flex-col">
               <div className="bg-[#2d2d2d] px-4 py-2 border-b border-slate-700 flex justify-between items-center text-slate-300 text-xs font-mono shrink-0">
                 <span>{activeFileName || 'Output Code'}</span>
-                <button onClick={() => { const t=document.createElement('textarea'); t.value=currentPreviewHTML; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t); }} className="hover:text-white flex items-center gap-1"><Copy className="w-3 h-3"/> Copy</button>
+                <button onClick={() => { const t = document.createElement('textarea'); t.value = currentPreviewHTML; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t); }} className="hover:text-white flex items-center gap-1"><Copy className="w-3 h-3" /> Copy</button>
               </div>
               <textarea value={codeViewValue} onChange={(e) => {
                 const val = e.target.value;
@@ -1779,71 +1779,71 @@ RULES FOR THIS EDIT:
             </div>
           ) : (
             <div className={`transition-all duration-300 ease-in-out bg-white flex flex-col ${deviceMode === 'mobile' ? 'w-[375px] h-[812px] rounded-[2.5rem] shadow-2xl border-[8px] border-slate-900 overflow-hidden shrink-0' : 'w-full h-full'}`}>
-               {!currentPreviewHTML ? (
-                 isGenerating ? (
-                    <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-8 text-center bg-white">
-                       <div className="w-16 h-16 mb-6 relative">
-                          <div className="absolute inset-0 border-4 border-slate-100 rounded-full"></div>
-                          <div className="absolute inset-0 border-4 border-[#A78BFA] rounded-full border-t-transparent animate-spin"></div>
-                          <Box className="w-6 h-6 text-[#A78BFA] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
-                       </div>
-                       <h3 className="text-xl font-medium text-slate-600 mb-2 whitespace-pre-wrap">{generationStatus}</h3>
+              {!currentPreviewHTML ? (
+                isGenerating ? (
+                  <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-8 text-center bg-white">
+                    <div className="w-16 h-16 mb-6 relative">
+                      <div className="absolute inset-0 border-4 border-slate-100 rounded-full"></div>
+                      <div className="absolute inset-0 border-4 border-[#A78BFA] rounded-full border-t-transparent animate-spin"></div>
+                      <Box className="w-6 h-6 text-[#A78BFA] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
                     </div>
-                 ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center bg-slate-50/50 p-8">
-                       <div className="max-w-2xl w-full">
-                           <div className="text-center mb-10">
-                               <div className="w-16 h-16 bg-white border border-slate-200 shadow-sm rounded-2xl flex items-center justify-center mx-auto mb-6">
-                                   <Sparkles className="w-8 h-8 text-[#A78BFA]" />
-                               </div>
-                               <h2 className="text-3xl font-semibold text-slate-800 mb-3">Welcome to your Workspace</h2>
-                               <p className="text-slate-500 text-sm">Describe what you want to build in the chat, or start with a template below.</p>
-                           </div>
+                    <h3 className="text-xl font-medium text-slate-600 mb-2 whitespace-pre-wrap">{generationStatus}</h3>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center bg-slate-50/50 p-8">
+                    <div className="max-w-2xl w-full">
+                      <div className="text-center mb-10">
+                        <div className="w-16 h-16 bg-white border border-slate-200 shadow-sm rounded-2xl flex items-center justify-center mx-auto mb-6">
+                          <Sparkles className="w-8 h-8 text-[#A78BFA]" />
+                        </div>
+                        <h2 className="text-3xl font-semibold text-slate-800 mb-3">Welcome to your Workspace</h2>
+                        <p className="text-slate-500 text-sm">Describe what you want to build in the chat, or start with a template below.</p>
+                      </div>
 
-                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                               <button onClick={() => setInput("Create a modern SaaS landing page with a hero section, feature grid, and pricing table.")} className="text-left p-5 bg-white border border-slate-200 rounded-2xl hover:border-[#A78BFA] hover:shadow-md transition-all group">
-                                   <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                       <Layout className="w-5 h-5 text-blue-500" />
-                                   </div>
-                                   <h4 className="font-semibold text-slate-800 mb-1">SaaS Landing Page</h4>
-                                   <p className="text-xs text-slate-500 leading-relaxed">High-converting landing page with hero, features, and pricing sections.</p>
-                               </button>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button onClick={() => setInput("Create a modern SaaS landing page with a hero section, feature grid, and pricing table.")} className="text-left p-5 bg-white border border-slate-200 rounded-2xl hover:border-[#A78BFA] hover:shadow-md transition-all group">
+                          <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <Layout className="w-5 h-5 text-blue-500" />
+                          </div>
+                          <h4 className="font-semibold text-slate-800 mb-1">SaaS Landing Page</h4>
+                          <p className="text-xs text-slate-500 leading-relaxed">High-converting landing page with hero, features, and pricing sections.</p>
+                        </button>
 
-                               <button onClick={() => setInput("Design a comprehensive admin dashboard with a sidebar navigation, header, stat cards, and a recent activity table.")} className="text-left p-5 bg-white border border-slate-200 rounded-2xl hover:border-[#A78BFA] hover:shadow-md transition-all group">
-                                   <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                       <Monitor className="w-5 h-5 text-purple-500" />
-                                   </div>
-                                   <h4 className="font-semibold text-slate-800 mb-1">Admin Dashboard</h4>
-                                   <p className="text-xs text-slate-500 leading-relaxed">Complete dashboard layout with sidebar, metrics, and data tables.</p>
-                               </button>
+                        <button onClick={() => setInput("Design a comprehensive admin dashboard with a sidebar navigation, header, stat cards, and a recent activity table.")} className="text-left p-5 bg-white border border-slate-200 rounded-2xl hover:border-[#A78BFA] hover:shadow-md transition-all group">
+                          <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <Monitor className="w-5 h-5 text-purple-500" />
+                          </div>
+                          <h4 className="font-semibold text-slate-800 mb-1">Admin Dashboard</h4>
+                          <p className="text-xs text-slate-500 leading-relaxed">Complete dashboard layout with sidebar, metrics, and data tables.</p>
+                        </button>
 
-                               <button onClick={() => setInput("Build an e-commerce product page with an image gallery, product details, size selector, and 'Add to Cart' button.")} className="text-left p-5 bg-white border border-slate-200 rounded-2xl hover:border-[#A78BFA] hover:shadow-md transition-all group">
-                                   <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                       <Smartphone className="w-5 h-5 text-emerald-500" />
-                                   </div>
-                                   <h4 className="font-semibold text-slate-800 mb-1">E-Commerce Product</h4>
-                                   <p className="text-xs text-slate-500 leading-relaxed">Beautiful product display with image gallery and purchasing controls.</p>
-                               </button>
+                        <button onClick={() => setInput("Build an e-commerce product page with an image gallery, product details, size selector, and 'Add to Cart' button.")} className="text-left p-5 bg-white border border-slate-200 rounded-2xl hover:border-[#A78BFA] hover:shadow-md transition-all group">
+                          <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <Smartphone className="w-5 h-5 text-emerald-500" />
+                          </div>
+                          <h4 className="font-semibold text-slate-800 mb-1">E-Commerce Product</h4>
+                          <p className="text-xs text-slate-500 leading-relaxed">Beautiful product display with image gallery and purchasing controls.</p>
+                        </button>
 
-                               <button onClick={() => setInput("Create a multi-step user authentication flow including Login, Register, and Forgot Password screens.")} className="text-left p-5 bg-white border border-slate-200 rounded-2xl hover:border-[#A78BFA] hover:shadow-md transition-all group">
-                                   <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                       <Box className="w-5 h-5 text-orange-500" />
-                                   </div>
-                                   <h4 className="font-semibold text-slate-800 mb-1">Authentication Flow</h4>
-                                   <p className="text-xs text-slate-500 leading-relaxed">Secure and stylish login, registration, and password recovery pages.</p>
-                               </button>
-                           </div>
-                       </div>
+                        <button onClick={() => setInput("Create a multi-step user authentication flow including Login, Register, and Forgot Password screens.")} className="text-left p-5 bg-white border border-slate-200 rounded-2xl hover:border-[#A78BFA] hover:shadow-md transition-all group">
+                          <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <Box className="w-5 h-5 text-orange-500" />
+                          </div>
+                          <h4 className="font-semibold text-slate-800 mb-1">Authentication Flow</h4>
+                          <p className="text-xs text-slate-500 leading-relaxed">Secure and stylish login, registration, and password recovery pages.</p>
+                        </button>
+                      </div>
                     </div>
-                 )
-               ) : (
-                 <iframe
-                   ref={iframeRef}
-                   title="Preview"
-                   className={`w-full h-full border-0 bg-white ${workspaceMode === 'design' ? 'cursor-crosshair' : ''}`}
-                   sandbox="allow-scripts allow-same-origin"
-                 />
-               )}
+                  </div>
+                )
+              ) : (
+                <iframe
+                  ref={iframeRef}
+                  title="Preview"
+                  className={`w-full h-full border-0 bg-white ${workspaceMode === 'design' ? 'cursor-crosshair' : ''}`}
+                  sandbox="allow-scripts allow-same-origin"
+                />
+              )}
             </div>
           )}
         </div>
