@@ -141,7 +141,7 @@ You must forcefully inject CONTEXTUALLY RELEVANT images. Never use random or gen
 
 2. AVATARS & FACES: Use Pravatar for realistic user faces in testimonials, user profiles, or team sections: https://i.pravatar.cc/150?u={unique_name}
 
-3. TRANSPARENT PNGs & DESIGN GRAPHICS: For 3D elements, detailed illustrations, or product mockups, you MUST use high-quality PNG image URLs. NEVER use unsplash.com URLs, placehold.co, or generic seeds.
+3. TRANSPARENT PNGs & DESIGN GRAPHICS: For product shots, people cutouts, 3D elements, food items, furniture, animals, or any transparent PNG needs — you MUST use ONLY the URLs from the HOSTED IMAGE CATALOG provided at the end of this instruction. Pick the most contextually relevant image by matching tags. NEVER use fake/made-up PNG URLs. NEVER use unsplash.com URLs, placehold.co, or generic seeds for PNGs.
 
 OUTPUT FORMAT: Separate every file clearly: FILE: filename.tier.html <!DOCTYPE html>... code ...
 

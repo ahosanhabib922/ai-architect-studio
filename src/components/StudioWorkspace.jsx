@@ -14,6 +14,7 @@ import {
 import { TEMPLATES } from '../config/templates';
 import { DEFAULT_MESSAGES, generateChatId } from '../config/constants';
 import { SYSTEM_INSTRUCTION, unsplashKey } from '../config/api';
+import { getImageCatalogInstruction } from '../config/imageAssets';
 import { loadInstructionsFromFirestore } from '../utils/firestoreAdmin';
 import { loadJSZip } from '../utils/loadJSZip';
 import { generateAIResponse, generateAIResponseStream } from '../utils/generateAIResponse';
@@ -630,7 +631,7 @@ const StudioWorkspace = () => {
     setGenerationStatus('Analyzing request & planning structure...');
     closeFloatingEditor();
 
-    const sysInstruction = (liveSystemInstruction || SYSTEM_INSTRUCTION) + (templateDNA ? `\n\nSTYLE DNA (MANDATORY):\n${templateDNA}` : '');
+    const sysInstruction = (liveSystemInstruction || SYSTEM_INSTRUCTION) + getImageCatalogInstruction() + (templateDNA ? `\n\nSTYLE DNA (MANDATORY):\n${templateDNA}` : '');
 
     let fullPrompt = userPrompt;
     // Context aware prompting — enforce surgical edits
