@@ -1,6 +1,7 @@
 // Hosted image catalog for AI generation
 // Base URL — update if domain changes
 const BASE = 'https://expritor.com/assets/images';
+const AVATAR_BASE = 'https://expritor.com/assets/avatar';
 
 const IMAGE_CATALOG = [
   // --- Furniture ---
@@ -58,6 +59,36 @@ const IMAGE_CATALOG = [
   { url: `${BASE}/cat-sat-still-no-other-image-white-background-fast-v-61-job-id-2f8942209c5b4aad852f3d892ae634-(1)-1.png`, tags: ['animal', 'cat', 'pet', 'sitting'], category: 'animals' },
   { url: `${BASE}/isolated-shot-rhodesian-ridgeback-puppy-sitting-front-white-wall.png`, tags: ['animal', 'dog', 'puppy', 'pet'], category: 'animals' },
   { url: `${BASE}/tricolor-australian-shepherd-panting-looking-camera-isolated-white-1.png`, tags: ['animal', 'dog', 'shepherd', 'pet'], category: 'animals' },
+
+  // --- Avatars ---
+  { url: `${AVATAR_BASE}/Andi-Lane.png`, tags: ['avatar', 'person', 'face', 'male', 'team', 'testimonial'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Andi-Lane-png.png`, tags: ['avatar', 'person', 'face', 'male', 'team', 'testimonial', 'transparent'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Ava-Wright.png`, tags: ['avatar', 'person', 'face', 'female', 'team', 'testimonial'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Ava-Wright-png.png`, tags: ['avatar', 'person', 'face', 'female', 'team', 'testimonial', 'transparent'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Candice-Wu.png`, tags: ['avatar', 'person', 'face', 'female', 'team', 'testimonial'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Candice-Wu-png.png`, tags: ['avatar', 'person', 'face', 'female', 'team', 'testimonial', 'transparent'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Demi-Wilkinson.png`, tags: ['avatar', 'person', 'face', 'female', 'team', 'testimonial'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Demi-Wilkinson-png.png`, tags: ['avatar', 'person', 'face', 'female', 'team', 'testimonial', 'transparent'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Drew-Cano.png`, tags: ['avatar', 'person', 'face', 'male', 'team', 'testimonial'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Drew-Cano-png.png`, tags: ['avatar', 'person', 'face', 'male', 'team', 'testimonial', 'transparent'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Eve-Leroy.png`, tags: ['avatar', 'person', 'face', 'female', 'team', 'testimonial'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Eve-Leroy-png.png`, tags: ['avatar', 'person', 'face', 'female', 'team', 'testimonial', 'transparent'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Image.png`, tags: ['avatar', 'person', 'face', 'team', 'testimonial'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Kate-Morrison.png`, tags: ['avatar', 'person', 'face', 'female', 'team', 'testimonial'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Kate-Morrison-png.png`, tags: ['avatar', 'person', 'face', 'female', 'team', 'testimonial', 'transparent'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Koray-Okumus.png`, tags: ['avatar', 'person', 'face', 'male', 'team', 'testimonial'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Koray-Okumus-png.png`, tags: ['avatar', 'person', 'face', 'male', 'team', 'testimonial', 'transparent'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Lana-Steiner.png`, tags: ['avatar', 'person', 'face', 'female', 'team', 'testimonial'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Lana-Steiner-png.png`, tags: ['avatar', 'person', 'face', 'female', 'team', 'testimonial', 'transparent'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Natali-Craig.png`, tags: ['avatar', 'person', 'face', 'female', 'team', 'testimonial'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Natali-Craig-png.png`, tags: ['avatar', 'person', 'face', 'female', 'team', 'testimonial', 'transparent'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Olivia-Rhye-png.png`, tags: ['avatar', 'person', 'face', 'female', 'team', 'testimonial', 'transparent'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Orlando-Diggs.png`, tags: ['avatar', 'person', 'face', 'male', 'team', 'testimonial'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Orlando-Diggs-png.png`, tags: ['avatar', 'person', 'face', 'male', 'team', 'testimonial', 'transparent'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Phoenix-Baker.png`, tags: ['avatar', 'person', 'face', 'male', 'team', 'testimonial'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Phoenix-Baker-png.png`, tags: ['avatar', 'person', 'face', 'male', 'team', 'testimonial', 'transparent'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Zahir-Mays.png`, tags: ['avatar', 'person', 'face', 'male', 'team', 'testimonial'], category: 'avatars' },
+  { url: `${AVATAR_BASE}/Zahir-Mays-png.png`, tags: ['avatar', 'person', 'face', 'male', 'team', 'testimonial', 'transparent'], category: 'avatars' },
 ];
 
 // Search hosted images by query (matches against tags and category)
@@ -98,6 +129,7 @@ export const getImageCatalogInstruction = () => {
   text += '- Match images by tags to the design context (e.g., food site → use food category, fashion store → use people/fashion)\n';
   text += '- Use different images across sections — do NOT repeat the same image\n';
   text += '- These are transparent PNGs — perfect for hero sections, product cards, feature sections\n';
+  text += '- AVATARS: For testimonials, team sections, user profiles — use ONLY avatar URLs from this catalog. Use non-transparent versions (without -png) for circular crops, transparent versions (with -png) for cutouts. NEVER use pravatar.cc.\n';
   text += '- If no hosted image fits the context, use picsum.photos with a descriptive seed as fallback\n';
 
   return text;

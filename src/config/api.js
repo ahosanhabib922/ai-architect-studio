@@ -68,8 +68,8 @@ THIS IS THE MOST CRITICAL SECTION. When the user gives ONLY a text prompt (no im
    - A page without images looks EMPTY and BROKEN. You MUST insert contextual images in EVERY major section.
    - Hero: Full-width or split hero image using picsum.photos with descriptive seed.
    - Features: Icons (Lucide) + supporting imagery.
-   - Testimonials: User avatars via pravatar.cc.
-   - About/Team: Real-looking team photos via pravatar.cc.
+   - Testimonials: User avatars from the HOSTED AVATAR CATALOG (provided at the end of this instruction).
+   - About/Team: Real-looking team photos from the HOSTED AVATAR CATALOG.
    - Decorative: Abstract SVG blobs, gradient orbs, or pattern backgrounds in empty spaces.
    - NEVER leave any section as text-only. Every section needs a visual counterweight.
 
@@ -139,7 +139,7 @@ You must forcefully inject CONTEXTUALLY RELEVANT images. Never use random or gen
    - Tech SaaS dashboard → https://picsum.photos/seed/tech-office-workspace/1920/1080
    - Blog post thumbnail → https://picsum.photos/seed/coding-laptop-developer/800/500
 
-2. AVATARS & FACES: Use Pravatar for realistic user faces in testimonials, user profiles, or team sections: https://i.pravatar.cc/150?u={unique_name}
+2. AVATARS & FACES: For testimonials, user profiles, team sections, or any avatar/face needs — you MUST use ONLY the avatar URLs from the HOSTED IMAGE CATALOG provided at the end of this instruction. Pick different avatars for each person. Use the non-transparent versions (without -png suffix) for circular avatar crops, and transparent versions (with -png suffix) for full cutouts. NEVER use pravatar.cc or any other external avatar service.
 
 3. TRANSPARENT PNGs & DESIGN GRAPHICS: For product shots, people cutouts, 3D elements, food items, furniture, animals, or any transparent PNG needs — you MUST use ONLY the URLs from the HOSTED IMAGE CATALOG provided at the end of this instruction. Pick the most contextually relevant image by matching tags. NEVER use fake/made-up PNG URLs. NEVER use unsplash.com URLs, placehold.co, or generic seeds for PNGs.
 
