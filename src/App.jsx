@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './components/LandingPage';
 import StudioWorkspace from './components/StudioWorkspace';
 import AdminPortal from './components/admin/AdminPortal';
+import PublishedViewer from './components/PublishedViewer';
 import { customStyles } from './styles/customStyles';
 import { useAuth } from './contexts/AuthContext';
 
@@ -78,6 +79,7 @@ export default function App() {
                 <AdminPortal />
               </AdminRoute>
             } />
+            <Route path="/view/:slug" element={<PublishedViewer />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </>
         ) : (
@@ -93,6 +95,7 @@ export default function App() {
                 <StudioWorkspace />
               </ProtectedRoute>
             } />
+            <Route path="/view/:slug" element={<PublishedViewer />} />
           </>
         )}
       </Routes>

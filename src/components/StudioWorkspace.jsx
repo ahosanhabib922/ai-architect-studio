@@ -8,13 +8,15 @@ import {
   FileText, Image as ImageIcon, File, Maximize, Minimize,
   Edit2, Bot, AlignLeft, AlignCenter, AlignRight, AlignJustify,
   MoreHorizontal, ArrowDown, CopyPlus, CornerLeftUp, Trash, Eye, Undo, Redo, Square,
-  Menu, PlusCircle, MessageSquare, Trash2, Clock, Plus, FolderDown, FileCode, Search, Zap
+  Menu, PlusCircle, MessageSquare, Trash2, Clock, Plus, FolderDown, FileCode, Search, Zap,
+  Globe, Link, ExternalLink, Unlink
 } from 'lucide-react';
 
 import { TEMPLATES } from '../config/templates';
 import { DEFAULT_MESSAGES, generateChatId } from '../config/constants';
 import { SYSTEM_INSTRUCTION, unsplashKey } from '../config/api';
 import { getImageCatalogInstruction, searchHostedImages, getCategories } from '../config/imageAssets';
+import { publishSite, unpublishSite, getPublishInfo } from '../utils/publishSite';
 import { loadInstructionsFromFirestore } from '../utils/firestoreAdmin';
 import { loadJSZip } from '../utils/loadJSZip';
 import { generateAIResponse, generateAIResponseStream } from '../utils/generateAIResponse';
@@ -56,6 +58,9 @@ const StudioWorkspace = () => {
   const [generationStatus, setGenerationStatus] = useState('');
   const [generatingFiles, setGeneratingFiles] = useState([]); // Array of tracked files during live generation
   const [isExportingReact, setIsExportingReact] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishInfo, setPublishInfo] = useState(null); // { slug, url }
+  const [showPublishToast, setShowPublishToast] = useState(false);
 
   // Multi-file Structure
   const [generatedFiles, setGeneratedFiles] = useState({}); // { "index.html": "...", "button.html": "..." }
@@ -860,6 +865,42 @@ RULES FOR THIS EDIT:
     }
   };
 
+  // --- Publish / Unpublish ---
+  useEffect(() => {
+    if (!activeSessionId) { setPublishInfo(null); return; }
+    getPublishInfo(activeSessionId).then(info => setPublishInfo(info)).catch(() => setPublishInfo(null));
+  }, [activeSessionId]);
+
+  const handlePublish = async () => {
+    if (!user || !activeSessionId || Object.keys(generatedFiles).length === 0) return;
+    setIsPublishing(true);
+    try {
+      const title = chatSessions[activeSessionId]?.title || 'Untitled';
+      const result = await publishSite(user.uid, activeSessionId, generatedFiles, title);
+      setPublishInfo(result);
+      setShowPublishToast(true);
+      navigator.clipboard.writeText(result.url).catch(() => {});
+      setTimeout(() => setShowPublishToast(false), 4000);
+    } catch (e) {
+      console.error('Publish failed:', e);
+      setMessages(prev => [...prev, { role: 'model', type: 'error', content: `Publish failed: ${e.message}` }]);
+    }
+    setIsPublishing(false);
+    setShowExportMenu(false);
+  };
+
+  const handleUnpublish = async () => {
+    if (!activeSessionId) return;
+    setIsPublishing(true);
+    try {
+      await unpublishSite(activeSessionId);
+      setPublishInfo(null);
+    } catch (e) {
+      console.error('Unpublish failed:', e);
+    }
+    setIsPublishing(false);
+  };
+
   const currentPreviewHTML = generatedFiles[activeFileName] || '';
   const codeViewValue = codeEditValue !== null ? codeEditValue : currentPreviewHTML;
   const iframeSource = currentPreviewHTML ? currentPreviewHTML.replace('</body>', `${getInjectionScript()}</body>`) : '';
@@ -1373,7 +1414,12 @@ RULES FOR THIS EDIT:
           )}
 
           {/* Export Controls */}
-          <div className="flex items-center gap-4 w-[160px] justify-end">
+          <div className="flex items-center gap-4 justify-end">
+            {publishInfo && (
+              <button onClick={() => window.open(`/view/${publishInfo.slug}`, '_blank')} className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-semibold hover:bg-emerald-100 transition-colors">
+                <Globe className="w-3 h-3" /> Live
+              </button>
+            )}
             <div className="relative border-r border-slate-200 pr-4">
               <button onClick={() => setShowExportMenu(!showExportMenu)} disabled={Object.keys(generatedFiles).length === 0 || isExportingReact} className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 disabled:opacity-50">
                 {isExportingReact ? (
@@ -1392,10 +1438,37 @@ RULES FOR THIS EDIT:
                     <Layout className="w-4 h-4 text-blue-500" />
                     <div className="flex flex-col"><span className="leading-tight">AI Export React</span><span className="text-[10px] text-slate-400 leading-tight">Convert current tab to JSX</span></div>
                   </button>
-                  <button onClick={() => handleExport('zip')} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors">
+                  <button onClick={() => handleExport('zip')} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-b border-slate-100 transition-colors">
                     <FolderDown className="w-4 h-4 text-emerald-500" />
                     <div className="flex flex-col"><span className="leading-tight">Download All HTML</span><span className="text-[10px] text-slate-400 leading-tight">ZIP Archive ({Object.keys(generatedFiles).length} files)</span></div>
                   </button>
+                  <button onClick={handlePublish} disabled={isPublishing} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors">
+                    {isPublishing ? (
+                      <div className="w-4 h-4 rounded-full border-2 border-[#A78BFA] border-t-transparent animate-spin" />
+                    ) : (
+                      <Globe className="w-4 h-4 text-orange-500" />
+                    )}
+                    <div className="flex flex-col">
+                      <span className="leading-tight">{publishInfo ? 'Update & Publish' : 'Publish Site'}</span>
+                      <span className="text-[10px] text-slate-400 leading-tight">{publishInfo ? 'Update live site' : 'Get a shareable link'}</span>
+                    </div>
+                  </button>
+                  {publishInfo && (
+                    <>
+                      <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/view/${publishInfo.slug}`); setShowExportMenu(false); }} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-t border-slate-100 transition-colors">
+                        <Link className="w-4 h-4 text-[#A78BFA]" />
+                        <div className="flex flex-col"><span className="leading-tight">Copy Link</span><span className="text-[10px] text-slate-400 leading-tight truncate max-w-[160px]">/view/{publishInfo.slug}</span></div>
+                      </button>
+                      <button onClick={() => window.open(`/view/${publishInfo.slug}`, '_blank')} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors">
+                        <ExternalLink className="w-4 h-4 text-blue-500" />
+                        <span className="leading-tight">Open Live Site</span>
+                      </button>
+                      <button onClick={handleUnpublish} disabled={isPublishing} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 flex items-center gap-2 border-t border-slate-100 transition-colors">
+                        <Unlink className="w-4 h-4" />
+                        <span className="leading-tight">Unpublish</span>
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -1929,6 +2002,27 @@ RULES FOR THIS EDIT:
             setShowPlanSelector(false);
           }}
         />
+      )}
+
+      {/* Publish Toast */}
+      {showPublishToast && publishInfo && (
+        <div className="fixed bottom-6 right-6 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 z-50 animate-fade-in max-w-sm">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 bg-emerald-50 rounded-xl flex items-center justify-center shrink-0">
+              <Globe className="w-5 h-5 text-emerald-500" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-slate-800">Site Published!</div>
+              <p className="text-xs text-slate-500 mt-0.5">Link copied to clipboard</p>
+              <button onClick={() => window.open(`/view/${publishInfo.slug}`, '_blank')} className="mt-2 text-xs font-medium text-[#A78BFA] hover:text-[#9061F9] flex items-center gap-1 transition-colors">
+                <ExternalLink className="w-3 h-3" /> Open live site
+              </button>
+            </div>
+            <button onClick={() => setShowPublishToast(false)} className="p-1 text-slate-300 hover:text-slate-500 transition-colors shrink-0">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
