@@ -388,6 +388,9 @@ const StudioWorkspace = () => {
         skipNextIframeWriteRef.current = true;
         setGeneratedFiles(prev => ({ ...prev, [activeFileNameRef.current]: html }));
       }
+      if (event.data?.type === 'ELEMENT_RESIZED') {
+        setManualStyles(prev => ({ ...prev, width: event.data.width, height: event.data.height }));
+      }
       if (event.data?.type === 'DESELECT') {
         setSelectedElement(null);
       }
