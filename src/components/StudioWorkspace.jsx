@@ -14,7 +14,7 @@ import {
 import { TEMPLATES } from '../config/templates';
 import { DEFAULT_MESSAGES, generateChatId } from '../config/constants';
 import { SYSTEM_INSTRUCTION, unsplashKey } from '../config/api';
-import { getImageCatalogInstruction } from '../config/imageAssets';
+import { getImageCatalogInstruction, searchHostedImages, getCategories } from '../config/imageAssets';
 import { loadInstructionsFromFirestore } from '../utils/firestoreAdmin';
 import { loadJSZip } from '../utils/loadJSZip';
 import { generateAIResponse, generateAIResponseStream } from '../utils/generateAIResponse';
@@ -107,9 +107,11 @@ const StudioWorkspace = () => {
   const [showPlanSelector, setShowPlanSelector] = useState(false);
 
   const [unsplashQuery, setUnsplashQuery] = useState('');
-
   const [unsplashResults, setUnsplashResults] = useState([]);
   const [isSearchingUnsplash, setIsSearchingUnsplash] = useState(false);
+  const [hostedQuery, setHostedQuery] = useState('');
+  const [hostedResults, setHostedResults] = useState([]);
+  const [hostedCategory, setHostedCategory] = useState('');
 
   const iframeRef = useRef(null);
   const endOfChatRef = useRef(null);
@@ -1513,6 +1515,27 @@ RULES FOR THIS EDIT:
                                   ))}
                                 </div>
                               )}
+                            </div>
+                            <div className="pt-2 border-t border-[#2e2e2e]">
+                              <label className="block text-[10px] text-zinc-500 mb-1.5">Hosted Images (PNG)</label>
+                              <div className="flex gap-1.5 mb-2">
+                                <Input value={hostedQuery} onChange={(e) => { setHostedQuery(e.target.value); setHostedResults(searchHostedImages(e.target.value)); }} placeholder="Search by tag..." />
+                                <select value={hostedCategory} onChange={(e) => { setHostedCategory(e.target.value); setHostedResults(e.target.value ? searchHostedImages(e.target.value) : searchHostedImages(hostedQuery)); }} className="bg-[#1c1c1c] border border-[#2e2e2e] rounded text-zinc-300 text-[10px] px-1.5 outline-none focus:border-[#A78BFA] shrink-0">
+                                  <option value="">All</option>
+                                  {getCategories().map(cat => <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>)}
+                                </select>
+                              </div>
+                              <div className="grid grid-cols-3 gap-1.5 max-h-[180px] overflow-y-auto custom-scrollbar">
+                                {(hostedResults.length > 0 ? hostedResults : (!hostedQuery && !hostedCategory) ? searchHostedImages('') : []).map((img, i) => (
+                                  <button key={i} onClick={() => { setManualSrc(img.url); handleManualChange('src', img.url); }} className="relative group rounded-md overflow-hidden aspect-square border border-[#2e2e2e] hover:border-[#A78BFA] transition-colors bg-[#1c1c1c]">
+                                    <img src={img.url} alt={img.tags[0]} className="w-full h-full object-contain p-1" />
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                                      <Check className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </div>
+                                    <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-1 py-0.5 text-[8px] text-zinc-300 truncate opacity-0 group-hover:opacity-100 transition-opacity">{img.tags.slice(0, 3).join(', ')}</div>
+                                  </button>
+                                ))}
+                              </div>
                             </div>
                           </>
                         ) : (
