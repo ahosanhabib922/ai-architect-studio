@@ -175,9 +175,14 @@ const StudioWorkspace = () => {
           const firstUserMsg = messages.find(m => m.role === 'user');
           if (firstUserMsg) newTitle = firstUserMsg.content.substring(0, 25) + '...';
         }
+        // Strip base64 data from attachments before saving (Firestore 1MB limit)
+        const cleanMessages = messages.map(m => {
+          if (!m.attachments?.length) return m;
+          return { ...m, attachments: m.attachments.map(({ data, content, ...rest }) => rest) };
+        });
         const updatedSession = { ...prev[activeSessionId], messages, generatedFiles, activeFileName, history, historyIndex, title: newTitle };
-        // Persist to Firestore
-        saveSessionToFirestore(user.uid, activeSessionId, updatedSession);
+        // Persist to Firestore with cleaned messages
+        saveSessionToFirestore(user.uid, activeSessionId, { ...updatedSession, messages: cleanMessages });
         return { ...prev, [activeSessionId]: updatedSession };
       });
     }, 500);
