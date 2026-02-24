@@ -101,6 +101,7 @@ const StudioWorkspace = () => {
   const [fontSearch, setFontSearch] = useState('');
   const [showFontPicker, setShowFontPicker] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showComponentsModal, setShowComponentsModal] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const [previewItem, setPreviewItem] = useState(null);
 
@@ -712,12 +713,23 @@ RULES FOR THIS EDIT:
         }
 
         if (Object.keys(newFiles).length > 0) {
-          setGeneratedFiles(prev => ({ ...prev, ...newFiles }));
-          if (!activeFileNameRef.current || !newFiles[activeFileNameRef.current]) {
-            const targetFile = lastParsedFile || Object.keys(newFiles)[0];
-            setActiveFileName(targetFile);
-            activeFileNameRef.current = targetFile;
-          }
+          setGeneratedFiles(prev => {
+            const merged = { ...prev, ...newFiles };
+            // Prefer showing a page file over a component file in the preview
+            const allKeys = Object.keys(merged);
+            const pageKeys = allKeys.filter(f => !/\.(atom|molecule|organism)\.html$/i.test(f));
+            const isCurrentComponent = activeFileNameRef.current && /\.(atom|molecule|organism)\.html$/i.test(activeFileNameRef.current);
+            if (pageKeys.length > 0 && (!activeFileNameRef.current || isCurrentComponent)) {
+              const target = pageKeys[pageKeys.length - 1];
+              setActiveFileName(target);
+              activeFileNameRef.current = target;
+            } else if (!activeFileNameRef.current || !merged[activeFileNameRef.current]) {
+              const target = lastParsedFile || allKeys[0];
+              setActiveFileName(target);
+              activeFileNameRef.current = target;
+            }
+            return merged;
+          });
         }
       };
 
@@ -1420,6 +1432,11 @@ RULES FOR THIS EDIT:
                 <Globe className="w-3 h-3" /> Live
               </button>
             )}
+            {Object.keys(generatedFiles).some(f => /\.(atom|molecule|organism)\.html$/i.test(f)) && (
+              <button onClick={() => setShowComponentsModal(true)} className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-[#A78BFA] transition-colors">
+                <Box className="w-4 h-4" /> Components
+              </button>
+            )}
             <div className="relative border-r border-slate-200 pr-4">
               <button onClick={() => setShowExportMenu(!showExportMenu)} disabled={Object.keys(generatedFiles).length === 0 || isExportingReact} className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 disabled:opacity-50">
                 {isExportingReact ? (
@@ -1478,20 +1495,35 @@ RULES FOR THIS EDIT:
           </div>
         </div>
 
-        {/* Multi-File Tab Bar */}
-        {Object.keys(generatedFiles).length > 0 && (
-          <div className="flex items-center gap-1 px-4 py-2 bg-slate-50 border-b border-slate-200 overflow-x-auto custom-scrollbar shrink-0 shadow-[inset_0_-2px_4px_rgba(0,0,0,0.02)]">
-            {Object.keys(generatedFiles).map(fileName => (
-              <button
-                key={fileName}
-                onClick={() => { setActiveFileName(fileName); activeFileNameRef.current = fileName; closeFloatingEditor(); }}
-                className={`px-3 py-1.5 text-[11px] font-semibold rounded-md transition-all whitespace-nowrap border ${activeFileName === fileName ? 'bg-white border-slate-200 shadow-sm text-[#A78BFA]' : 'bg-transparent border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}
-              >
-                {fileName}
-              </button>
-            ))}
-          </div>
-        )}
+        {/* Multi-File Tab Bar — Only shows pages (hides atoms/molecules/organisms) */}
+        {Object.keys(generatedFiles).length > 0 && (() => {
+          const allFiles = Object.keys(generatedFiles);
+          const isComponentFile = (f) => /\.(atom|molecule|organism)\.html$/i.test(f);
+          const pageFiles = allFiles.filter(f => !isComponentFile(f));
+          const componentFiles = allFiles.filter(f => isComponentFile(f));
+          const displayFiles = pageFiles.length > 0 ? pageFiles : allFiles;
+          return (
+            <div className="flex items-center gap-1 px-4 py-2 bg-slate-50 border-b border-slate-200 overflow-x-auto custom-scrollbar shrink-0 shadow-[inset_0_-2px_4px_rgba(0,0,0,0.02)]">
+              {displayFiles.map(fileName => (
+                <button
+                  key={fileName}
+                  onClick={() => { setActiveFileName(fileName); activeFileNameRef.current = fileName; closeFloatingEditor(); }}
+                  className={`px-3 py-1.5 text-[11px] font-semibold rounded-md transition-all whitespace-nowrap border ${activeFileName === fileName ? 'bg-white border-slate-200 shadow-sm text-[#A78BFA]' : 'bg-transparent border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}
+                >
+                  {fileName}
+                </button>
+              ))}
+              {componentFiles.length > 0 && (
+                <button
+                  onClick={() => setShowComponentsModal(true)}
+                  className="px-3 py-1.5 text-[11px] font-semibold rounded-md transition-all whitespace-nowrap border bg-transparent border-dashed border-slate-300 text-slate-400 hover:text-[#A78BFA] hover:border-[#A78BFA] hover:bg-purple-50 ml-1"
+                >
+                  <span className="flex items-center gap-1"><Box className="w-3 h-3" /> {componentFiles.length} Components</span>
+                </button>
+              )}
+            </div>
+          );
+        })()}
 
         <div className={`flex-1 relative flex justify-center items-start ${deviceMode === 'mobile' && workspaceMode !== 'code' ? 'p-4 md:p-8 overflow-y-auto' : 'overflow-hidden'}`}>
 
@@ -2005,6 +2037,90 @@ RULES FOR THIS EDIT:
       )}
 
       {/* Publish Toast */}
+      {/* Components Modal — Full page view of atoms/molecules/organisms */}
+      {showComponentsModal && (() => {
+        const allFiles = Object.keys(generatedFiles);
+        const atoms = allFiles.filter(f => /\.atom\.html$/i.test(f));
+        const molecules = allFiles.filter(f => /\.molecule\.html$/i.test(f));
+        const organisms = allFiles.filter(f => /\.organism\.html$/i.test(f));
+        const tierGroups = [
+          { label: 'Organisms', icon: '🧩', files: organisms, badge: 'bg-purple-50 text-purple-600' },
+          { label: 'Molecules', icon: '🔗', files: molecules, badge: 'bg-blue-50 text-blue-600' },
+          { label: 'Atoms', icon: '⚛️', files: atoms, badge: 'bg-emerald-50 text-emerald-600' },
+        ].filter(g => g.files.length > 0);
+
+        return (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowComponentsModal(false)}>
+            <div className="w-full max-w-5xl max-h-[90vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 bg-purple-50 rounded-xl flex items-center justify-center">
+                    <Box className="w-5 h-5 text-[#A78BFA]" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold text-slate-800">Design Components</h2>
+                    <p className="text-xs text-slate-400">{atoms.length + molecules.length + organisms.length} components generated</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowComponentsModal(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                {tierGroups.map(group => (
+                  <div key={group.label}>
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="text-lg">{group.icon}</span>
+                      <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">{group.label}</h3>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${group.badge}`}>{group.files.length}</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {group.files.map(fileName => (
+                        <div key={fileName} className="border border-slate-200 rounded-xl overflow-hidden hover:shadow-lg hover:border-[#A78BFA]/30 transition-all group/card">
+                          {/* Preview */}
+                          <div className="h-48 bg-slate-50 relative overflow-hidden">
+                            <iframe
+                              srcDoc={generatedFiles[fileName]}
+                              title={fileName}
+                              sandbox="allow-scripts"
+                              className="w-[200%] h-[200%] origin-top-left scale-50 pointer-events-none border-0"
+                            />
+                          </div>
+                          {/* Info Bar */}
+                          <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-slate-100">
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold text-slate-700 truncate">{fileName}</p>
+                              <p className="text-[10px] text-slate-400 mt-0.5">{group.label.slice(0, -1)}</p>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                onClick={() => { setActiveFileName(fileName); activeFileNameRef.current = fileName; setShowComponentsModal(false); }}
+                                className="px-3 py-1.5 text-[11px] font-semibold text-[#A78BFA] hover:bg-purple-50 rounded-lg transition-colors"
+                              >
+                                View
+                              </button>
+                              <button
+                                onClick={() => { navigator.clipboard.writeText(generatedFiles[fileName]); }}
+                                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {showPublishToast && publishInfo && (
         <div className="fixed bottom-6 right-6 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 z-50 animate-fade-in max-w-sm">
           <div className="flex items-start gap-3">
