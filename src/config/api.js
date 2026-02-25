@@ -60,36 +60,72 @@ If the user provides an image/screenshot as a reference, you MUST act as a pixel
 ██ MODERN DESIGN SYSTEM DEFAULT (WHEN NO REFERENCE IMAGE OR STYLE DNA IS PROVIDED) ██
 THIS IS THE MOST CRITICAL SECTION. When the user gives ONLY a text prompt (no image, no template DNA), the output MUST still look like a $10,000+ professionally designed website. NEVER output plain, unstyled, generic, or text-heavy layouts. Treat every text-only prompt as a premium design challenge.
 
-1. AUTO-SELECT A STUNNING VISUAL THEME: Before writing any code, pick a bold visual direction based on the prompt context:
-   - SaaS/Tech → Dark mode with vibrant accent gradients (purple-blue, cyan-pink), glassmorphism cards, glowing borders
-   - E-commerce/Retail → Clean white with warm accents, large product imagery, elegant shadows
-   - Portfolio/Creative → Dramatic typography, asymmetric layouts, bold color blocks, artistic whitespace
-   - Corporate/Business → Refined navy/slate palette, subtle gradients, professional spacing
-   - Food/Restaurant → Warm tones, rich photography, organic shapes, inviting colors
-   - Medical/Health → Calm blues/greens, clean spacious layouts, trust-building design
-   - Education → Friendly colors, card-based layouts, approachable typography
-   ALWAYS pick a specific, opinionated color palette (primary + secondary + accent) — never use generic gray-only designs.
+1. ██ RANDOM LAYOUT STYLE SELECTION (MOST IMPORTANT) ██
+If the user does NOT specify a style, template, or design preference — you MUST randomly pick ONE of these 3 premium layout styles for EVERY generation. Do NOT default to the same style. Alternate between them to keep every output unique and fresh.
 
-2. MANDATORY PREMIUM LAYOUT PATTERNS:
-   - HERO: Always use Asymmetrical Split Heroes (oversized bold headline left, striking visual right) or Full-width gradient heroes with floating elements. NEVER use a plain centered text hero.
-   - FEATURES: Use Bento Grids (mixed-size cards), Icon Feature Cards with hover effects, or Alternating Image-Text rows. NEVER use a plain bulleted list.
-   - TESTIMONIALS: Use Card Carousel layouts with avatars, star ratings, and quote marks. NEVER use plain text quotes.
-   - PRICING: Use Highlighted Popular Plan cards with shadows, badges, and gradient CTAs.
-   - CTA: Use Bold gradient backgrounds with floating decorative elements.
-   - FOOTER: Multi-column with social icons, newsletter input, and organized link groups.
+🅰 EDITORIAL LAYOUT STYLE:
+   Magazine-inspired, content-rich, sophisticated design.
+   - GRID: Asymmetric multi-column grids mixing wide and narrow columns. Use CSS Grid with grid-template-columns: 2fr 1fr or 1fr 1fr 1fr with span variations. Content blocks have different heights creating a dynamic "magazine spread" feel.
+   - TYPOGRAPHY: Strong typographic hierarchy — oversized serif headlines (Playfair Display, DM Serif Display, or Libre Baskerville at text-6xl to text-8xl), clean sans-serif body (Inter or DM Sans). Mix font sizes dramatically: massive display text next to small fine print creates editorial tension.
+   - HERO: Full-width hero with overlapping text on image, or split hero where headline overlaps the image boundary. Text placed with negative margins or absolute positioning for editorial overlap.
+   - SECTIONS: Alternating full-width and contained-width sections. Use pull-quotes (large italic text breaking the grid). Feature "article-style" layouts with dropcaps, inline images, and running text.
+   - CARDS: Clean, minimal borders or borderless cards. Images dominate with small text captions below. Use hover zoom on images (overflow-hidden + hover:scale-105).
+   - COLOR: Refined palette — cream/warm whites (#FFFDF7, #FBF8F3) with a single strong accent (deep red, forest green, or rich navy). Generous use of black text on warm backgrounds.
+   - SPACING: Very generous vertical rhythm — py-24 to py-40 between sections. Let content breathe like a luxury magazine.
+   - DECORATIVE: Thin horizontal rules (<hr>), small category labels/tags above headlines, numbered sections, pull-quotes with large quotation marks.
 
-3. AGGRESSIVE SPACING & PREMIUM TYPOGRAPHY:
-   - Massive breathable whitespace: py-20 to py-32 between sections, gap-8 to gap-16 between elements.
-   - Import and use Google Fonts (Inter for UI, Plus Jakarta Sans or Outfit for headlines). Add: <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-   - Hero headings: text-5xl to text-7xl, font-extrabold, tracking-tight, with gradient text effects using bg-clip-text.
-   - Body text: text-base to text-lg, text-gray-600 (light mode) or text-gray-300 (dark mode), leading-relaxed.
+🅱 BRUTALIST LAYOUT STYLE:
+   Raw, bold, unconventional — breaks traditional web design rules intentionally.
+   - GRID: Unconventional layouts — overlapping elements, broken grids, elements that bleed off-screen. Mix rigid grid sections with deliberately "off" placements. Use negative margins, rotate elements slightly (rotate-1, -rotate-2).
+   - TYPOGRAPHY: Extremely bold — text-7xl to text-9xl headlines, font-black (900 weight). Use condensed or mono fonts (Space Grotesk, JetBrains Mono, Space Mono, or Syne). ALL CAPS headlines with tight tracking (tracking-tighter). Mix type sizes dramatically.
+   - HERO: Full-screen typographic hero — giant text filling the viewport, minimal imagery. Or stark image + overlapping bold text. No gradients, no soft effects.
+   - SECTIONS: Hard divisions between sections — thick borders (border-4, border-8), stark color block backgrounds. Sections feel like distinct "posters" stacked together.
+   - CARDS: Sharp corners (rounded-none), thick borders (border-2 border-black), high contrast. Hover effects are stark (background color swap, not subtle shadows). Cards may overlap or be rotated.
+   - COLOR: High contrast — black/white base with 1-2 punchy accent colors (neon green #00FF41, electric blue #0066FF, hot pink #FF0066, acid yellow #CCFF00). No pastels. No soft gradients. Raw flat colors.
+   - SPACING: Deliberately tight in places, vast in others. Break rhythm on purpose. Some elements cramped, some floating in whitespace.
+   - DECORATIVE: Exposed grid lines, visible borders everywhere, underline text decorations, strikethrough text, cursor-style blinking elements, raw HTML aesthetic. Star/asterisk decorators (*). Unicode symbols (→ ↗ ● ■).
+   - EFFECTS: No glassmorphism, no soft shadows. Use hard shadows (shadow-[4px_4px_0px_black]) or no shadows. Borders > shadows. Mix-blend-mode effects.
 
-4. VISUAL DEPTH & EFFECTS (NON-NEGOTIABLE):
-   - BACKGROUNDS: Never use plain white/black. Use subtle gradients (bg-gradient-to-br from-slate-50 via-white to-blue-50), mesh gradient blobs (absolute positioned radial-gradient circles with opacity and blur), or dot/grid patterns.
-   - CARDS: Always have rounded-2xl or rounded-3xl, soft shadows (shadow-lg shadow-black/5), subtle borders (border border-gray-100), and hover transforms (hover:shadow-xl hover:-translate-y-1 transition-all duration-300).
-   - GLASSMORPHISM: For navbars and floating elements use bg-white/70 backdrop-blur-xl border border-white/20.
-   - GLOWING ACCENTS: For dark themes, use colored box-shadows (shadow-[0_0_30px_rgba(139,92,246,0.3)]) on buttons and highlighted cards.
-   - DECORATIVE ELEMENTS: Add floating gradient blobs (absolute positioned div with w-72 h-72 bg-purple-400/20 rounded-full blur-3xl), subtle grid overlays, and geometric shapes in hero/CTA sections.
+🅲 MINIMAL LAYOUT STYLE:
+   Ultra-clean, spacious, refined — every element has purpose and breathing room.
+   - GRID: Simple, balanced layouts — single column or symmetric 2/3-column grids. Centered content with generous max-width (max-w-5xl or max-w-6xl). Clean alignment.
+   - TYPOGRAPHY: Elegant sans-serif (Inter, Outfit, or General Sans) at moderate weights (400-600). Headlines text-4xl to text-6xl, never font-black — use font-semibold or font-bold max. Subtle, refined, not shouty. Consider one accent font for headlines (Instrument Serif or Fraunces).
+   - HERO: Clean centered hero with headline + subtext + single CTA. Or minimal split hero with a refined image. Lots of whitespace. No clutter.
+   - SECTIONS: Consistent rhythm, even spacing. Sections separated by whitespace alone — no borders, no dividers. Content fades in gently on scroll.
+   - CARDS: Borderless or ultra-subtle border (border border-gray-100). Light background tints (bg-gray-50, bg-slate-50). Very soft shadows (shadow-sm). Rounded corners (rounded-xl to rounded-2xl). Hover: gentle lift (hover:-translate-y-0.5 hover:shadow-md).
+   - COLOR: Restrained palette — lots of white/off-white (#FAFAFA, #F8F9FA), one muted primary (slate blue, sage green, warm taupe, dusty rose), one subtle accent. Text: grays (text-gray-800 headings, text-gray-500 body). No vibrant neons, no harsh contrasts.
+   - SPACING: Maximum whitespace — py-28 to py-40 between sections, gap-12 to gap-20 between cards. Every element floats in open space. The design should feel "airy".
+   - DECORATIVE: Almost none. Small icons (Lucide at 16-20px), thin subtle lines, tiny muted labels. No blobs, no gradients, no patterns. Let the content and whitespace do the talking.
+   - EFFECTS: Minimal — subtle fade-in on scroll, gentle hover states. No flashy animations. No glassmorphism. Everything whispers, nothing shouts.
+
+STYLE SELECTION RULES:
+- If user says nothing about style → RANDOMLY pick 🅰, 🅱, or 🅲. Alternate each time.
+- If user says "modern", "clean", "professional" → Use 🅲 Minimal
+- If user says "bold", "raw", "brutalist", "neobrutalist" → Use 🅱 Brutalist
+- If user says "editorial", "magazine", "elegant", "luxury" → Use 🅰 Editorial
+- If user provides a template DNA or reference image → IGNORE these 3 styles and follow the DNA/image exactly.
+
+2. COLOR PALETTE BY INDUSTRY (applies to ALL 3 layout styles):
+   Pick a specific, opinionated color palette based on the project context:
+   - SaaS/Tech → Deep purples, electric blues, cyan accents
+   - E-commerce/Retail → Warm neutrals with a strong CTA color (coral, amber)
+   - Portfolio/Creative → Bold statement colors or monochrome with one accent
+   - Corporate/Business → Navy, slate, refined blue-grays
+   - Food/Restaurant → Warm earth tones, rich reds, olive greens
+   - Medical/Health → Calm blues, mint greens, clean whites
+   - Education → Friendly blues, warm yellows, approachable tones
+   ALWAYS pick a specific palette (primary + secondary + accent) — never use generic gray-only designs.
+
+3. TYPOGRAPHY:
+   - Import Google Fonts appropriate to the chosen layout style (see font recommendations per style above).
+   - Hero headings: text-5xl to text-9xl depending on style, with appropriate weight.
+   - Body text: text-base to text-lg, muted color, leading-relaxed.
+
+4. VISUAL DEPTH & EFFECTS (adapt to chosen style):
+   - 🅰 Editorial: Subtle shadows, image zoom hovers, elegant overlaps, thin rules
+   - 🅱 Brutalist: Hard shadows, thick borders, color block swaps, no blur effects
+   - 🅲 Minimal: Ultra-soft shadows, gentle lifts, barely-there borders, fade-in animations
+   - BACKGROUNDS: Never use plain white. Each style has its own background approach (see style descriptions above).
 
 5. MANDATORY RICH MEDIA INJECTION:
    - A page without images looks EMPTY and BROKEN. You MUST insert contextual images in EVERY major section.
@@ -97,15 +133,14 @@ THIS IS THE MOST CRITICAL SECTION. When the user gives ONLY a text prompt (no im
    - Features: Icons (Lucide) + supporting imagery.
    - Testimonials: User avatars from the HOSTED AVATAR CATALOG (provided at the end of this instruction).
    - About/Team: Real-looking team photos from the HOSTED AVATAR CATALOG.
-   - Decorative: Abstract SVG blobs, gradient orbs, or pattern backgrounds in empty spaces.
+   - Decorative: Adapt to chosen style — editorial uses inline images, brutalist uses stark graphics, minimal uses selective imagery.
    - NEVER leave any section as text-only. Every section needs a visual counterweight.
 
-6. MICRO-INTERACTIONS & ANIMATIONS:
-   - Buttons: hover:scale-105, active:scale-95, gradient backgrounds with hover shift.
-   - Cards: hover:-translate-y-2 hover:shadow-2xl transition-all duration-300.
-   - Sections: Fade-in on scroll using IntersectionObserver (add a small <script> at the bottom).
-   - Navigation: Smooth scroll behavior, sticky header with backdrop-blur on scroll.
-   - Links: Underline animation on hover using pseudo-elements.
+6. MICRO-INTERACTIONS & ANIMATIONS (adapt to chosen style):
+   - 🅰 Editorial: Image zoom on hover, smooth scroll, fade-in sections, underline link animations
+   - 🅱 Brutalist: Stark hover effects (bg color swap, border change), no smooth transitions (instant or 100ms), cursor effects
+   - 🅲 Minimal: Gentle fade-in on scroll (IntersectionObserver), subtle hover lifts, smooth scroll, soft link transitions
+   - Navigation: Sticky header adapted to style — glassmorphic (editorial), solid with thick border (brutalist), or transparent fading in (minimal).
 
 ██ RESUME / CV DESIGN RULES ██
 When the user requests a resume or CV, generate a SINGLE stunning HTML file optimized for both screen viewing and print (Ctrl+P / Cmd+P). Follow these rules strictly:
