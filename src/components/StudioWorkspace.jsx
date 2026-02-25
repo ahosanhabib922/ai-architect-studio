@@ -84,7 +84,6 @@ const StudioWorkspace = () => {
   useEffect(() => { activeFileNameStateRef.current = activeFileName; }, [activeFileName]);
   useEffect(() => { historyRef.current = history; }, [history]);
   useEffect(() => { historyIndexRef.current = historyIndex; }, [historyIndex]);
-  useEffect(() => { codeEditValueRef.current = codeEditValue; }, [codeEditValue]);
 
   // View & App Modes
   const [deviceMode, setDeviceMode] = useState('desktop');
@@ -120,6 +119,7 @@ const StudioWorkspace = () => {
 
   const [codeEditValue, setCodeEditValue] = useState(null); // local buffer for code editor (null = use generatedFiles)
   const codeEditValueRef = useRef(null);
+  useEffect(() => { codeEditValueRef.current = codeEditValue; }, [codeEditValue]);
   const [liveSystemInstruction, setLiveSystemInstruction] = useState(null);
   const [tokenLimit, setTokenLimit] = useState(0); // 0 = unlimited
   const [userTokensUsed, setUserTokensUsed] = useState(0);
