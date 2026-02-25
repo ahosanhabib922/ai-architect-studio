@@ -73,6 +73,19 @@ const StudioWorkspace = () => {
   const isUndoingRef = useRef(false);
   const historyTimeoutRef = useRef(null);
 
+  // Refs that always hold the latest state (for reliable Firestore sync)
+  const messagesRef = useRef(messages);
+  const generatedFilesRef = useRef(generatedFiles);
+  const activeFileNameStateRef = useRef(activeFileName);
+  const historyRef = useRef(history);
+  const historyIndexRef = useRef(historyIndex);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+  useEffect(() => { generatedFilesRef.current = generatedFiles; }, [generatedFiles]);
+  useEffect(() => { activeFileNameStateRef.current = activeFileName; }, [activeFileName]);
+  useEffect(() => { historyRef.current = history; }, [history]);
+  useEffect(() => { historyIndexRef.current = historyIndex; }, [historyIndex]);
+  useEffect(() => { codeEditValueRef.current = codeEditValue; }, [codeEditValue]);
+
   // View & App Modes
   const [deviceMode, setDeviceMode] = useState('desktop');
   const [workspaceMode, setWorkspaceMode] = useState('preview');
@@ -106,6 +119,7 @@ const StudioWorkspace = () => {
   const [previewItem, setPreviewItem] = useState(null);
 
   const [codeEditValue, setCodeEditValue] = useState(null); // local buffer for code editor (null = use generatedFiles)
+  const codeEditValueRef = useRef(null);
   const [liveSystemInstruction, setLiveSystemInstruction] = useState(null);
   const [tokenLimit, setTokenLimit] = useState(0); // 0 = unlimited
   const [userTokensUsed, setUserTokensUsed] = useState(0);
@@ -171,32 +185,63 @@ const StudioWorkspace = () => {
   }, [user]);
 
   // --- Session Syncing & Management (debounced, persists to Firestore) ---
+  // Flush function reads from refs to always get the latest state (avoids stale closures)
+  const flushSessionToFirestore = useCallback((sessionId) => {
+    const uid = user?.uid;
+    if (!uid || !sessionId) return;
+    const latestMessages = messagesRef.current;
+    const latestFiles = generatedFilesRef.current;
+    const latestFileName = activeFileNameStateRef.current;
+    const latestHistory = historyRef.current;
+    const latestHistoryIndex = historyIndexRef.current;
+
+    setChatSessions(prev => {
+      if (!prev[sessionId]) return prev;
+      const currentTitle = prev[sessionId].title;
+      let newTitle = currentTitle;
+      if (currentTitle === 'New Design' && latestMessages.length > 1) {
+        const firstUserMsg = latestMessages.find(m => m.role === 'user');
+        if (firstUserMsg) newTitle = firstUserMsg.content.substring(0, 25) + '...';
+      }
+      // Strip base64 data from attachments before saving (Firestore 1MB limit)
+      const cleanMessages = latestMessages.map(m => {
+        if (!m.attachments?.length) return m;
+        return { ...m, attachments: m.attachments.map(({ data, content, ...rest }) => rest) };
+      });
+      const updatedSession = { ...prev[sessionId], messages: latestMessages, generatedFiles: latestFiles, activeFileName: latestFileName, history: latestHistory, historyIndex: latestHistoryIndex, title: newTitle };
+      // Persist to Firestore with cleaned messages
+      saveSessionToFirestore(uid, sessionId, { ...updatedSession, messages: cleanMessages });
+      return { ...prev, [sessionId]: updatedSession };
+    });
+  }, [user]);
+
   useEffect(() => {
     if (!user || !sessionsLoaded || !activeSessionId) return;
     activeSessionRef.current = activeSessionId;
     clearTimeout(sessionSyncTimerRef.current);
-    sessionSyncTimerRef.current = setTimeout(() => {
-      setChatSessions(prev => {
-        if (!prev[activeSessionId]) return prev;
-        const currentTitle = prev[activeSessionId].title;
-        let newTitle = currentTitle;
-        if (currentTitle === 'New Design' && messages.length > 1) {
-          const firstUserMsg = messages.find(m => m.role === 'user');
-          if (firstUserMsg) newTitle = firstUserMsg.content.substring(0, 25) + '...';
-        }
-        // Strip base64 data from attachments before saving (Firestore 1MB limit)
-        const cleanMessages = messages.map(m => {
-          if (!m.attachments?.length) return m;
-          return { ...m, attachments: m.attachments.map(({ data, content, ...rest }) => rest) };
-        });
-        const updatedSession = { ...prev[activeSessionId], messages, generatedFiles, activeFileName, history, historyIndex, title: newTitle };
-        // Persist to Firestore with cleaned messages
-        saveSessionToFirestore(user.uid, activeSessionId, { ...updatedSession, messages: cleanMessages });
-        return { ...prev, [activeSessionId]: updatedSession };
-      });
-    }, 500);
+    sessionSyncTimerRef.current = setTimeout(() => flushSessionToFirestore(activeSessionId), 500);
     return () => clearTimeout(sessionSyncTimerRef.current);
-  }, [messages, generatedFiles, activeFileName, history, historyIndex, activeSessionId, user, sessionsLoaded]);
+  }, [messages, generatedFiles, activeFileName, history, historyIndex, activeSessionId, user, sessionsLoaded, flushSessionToFirestore]);
+
+  // Flush pending saves before page unload (prevents data loss on reload)
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      clearTimeout(sessionSyncTimerRef.current);
+      // Flush pending code editor changes into generatedFiles ref
+      if (codeEditTimerRef.current) {
+        clearTimeout(codeEditTimerRef.current);
+        codeEditTimerRef.current = null;
+      }
+      if (codeEditValueRef.current !== null && activeFileNameStateRef.current) {
+        generatedFilesRef.current = { ...generatedFilesRef.current, [activeFileNameStateRef.current]: codeEditValueRef.current };
+      }
+      if (activeSessionRef.current) {
+        flushSessionToFirestore(activeSessionRef.current);
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [flushSessionToFirestore]);
 
   // --- Sync URL chatId with activeSessionId ---
   useEffect(() => {
