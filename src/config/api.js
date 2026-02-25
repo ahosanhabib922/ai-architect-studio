@@ -129,11 +129,12 @@ STYLE SELECTION RULES:
 
 5. MANDATORY RICH MEDIA INJECTION:
    - A page without images looks EMPTY and BROKEN. You MUST insert contextual images in EVERY major section.
-   - Hero: Full-width or split hero image using picsum.photos with descriptive seed.
-   - Features: Icons (Lucide) + supporting imagery.
+   - Hero: Full-width or split hero image using picsum.photos with descriptive seed, OR use a hosted illustration from the HOSTED IMAGE CATALOG (Yuppies-style illustrations are great for SaaS/tech/startup heroes).
+   - Features: Icons (Lucide) + supporting imagery or illustrations (e.g., Yuppies-Computer for tech features, Yuppies-Chat for communication features).
    - Testimonials: User avatars from the HOSTED AVATAR CATALOG (provided at the end of this instruction).
-   - About/Team: Real-looking team photos from the HOSTED AVATAR CATALOG.
-   - Decorative: Adapt to chosen style — editorial uses inline images, brutalist uses stark graphics, minimal uses selective imagery.
+   - About/Team: Real-looking team photos from the HOSTED AVATAR CATALOG, or illustrated people (Yuppies-Standing, Yuppies-Bust) for a modern illustrated style.
+   - ILLUSTRATIONS: The HOSTED IMAGE CATALOG includes flat-design colorful illustrations (Yuppies style) — use these for SaaS, tech, startup, portfolio, or any modern website. They are perfect for hero sections, feature explanations, about pages, and empty states. Prefer illustrations over stock photos for a modern, unique look.
+   - Decorative: Adapt to chosen style — editorial uses inline images, brutalist uses stark graphics, minimal uses selective imagery or illustrations.
    - NEVER leave any section as text-only. Every section needs a visual counterweight.
 
 6. MICRO-INTERACTIONS & ANIMATIONS (adapt to chosen style):
@@ -436,7 +437,7 @@ You must forcefully inject CONTEXTUALLY RELEVANT images. Never use random or gen
 
 2. AVATARS & FACES: For testimonials, user profiles, team sections, or any avatar/face needs — you MUST use ONLY the avatar URLs from the HOSTED IMAGE CATALOG provided at the end of this instruction. Pick different avatars for each person. Use the non-transparent versions (without -png suffix) for circular avatar crops, and transparent versions (with -png suffix) for full cutouts. NEVER use pravatar.cc or any other external avatar service.
 
-3. TRANSPARENT PNGs & DESIGN GRAPHICS: For product shots, people cutouts, 3D elements, food items, furniture, animals, or any transparent PNG needs — you MUST use ONLY the URLs from the HOSTED IMAGE CATALOG provided at the end of this instruction. Pick the most contextually relevant image by matching tags. NEVER use fake/made-up PNG URLs. NEVER use unsplash.com URLs, placehold.co, or generic seeds for PNGs.
+3. TRANSPARENT PNGs, ILLUSTRATIONS & DESIGN GRAPHICS: For product shots, people cutouts, 3D elements, food items, furniture, animals, illustrations, or any transparent PNG needs — you MUST use ONLY the URLs from the HOSTED IMAGE CATALOG provided at the end of this instruction. The catalog includes flat-design illustrations (Yuppies style) — use these for SaaS heroes, feature sections, about pages. Pick the most contextually relevant image by matching tags. NEVER use fake/made-up PNG URLs. NEVER use unsplash.com URLs, placehold.co, or generic seeds for PNGs.
 
 OUTPUT FORMAT: Separate every file clearly: FILE: filename.tier.html <!DOCTYPE html>... code ...
 

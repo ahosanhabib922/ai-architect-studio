@@ -2,6 +2,7 @@
 // Base URL — update if domain changes
 const BASE = 'https://expritor.com/assets/images';
 const AVATAR_BASE = 'https://expritor.com/assets/avatar';
+const ILLUS_BASE = 'https://expritor.com/assets/illustrations';
 
 const IMAGE_CATALOG = [
   // --- Furniture ---
@@ -89,6 +90,34 @@ const IMAGE_CATALOG = [
   { url: `${AVATAR_BASE}/Phoenix-Baker-png.png`, tags: ['avatar', 'person', 'face', 'male', 'team', 'testimonial', 'transparent'], category: 'avatars' },
   { url: `${AVATAR_BASE}/Zahir-Mays.png`, tags: ['avatar', 'person', 'face', 'male', 'team', 'testimonial'], category: 'avatars' },
   { url: `${AVATAR_BASE}/Zahir-Mays-png.png`, tags: ['avatar', 'person', 'face', 'male', 'team', 'testimonial', 'transparent'], category: 'avatars' },
+
+  // --- Illustrations (Yuppies style — flat design, modern, colorful) ---
+  { url: `${ILLUS_BASE}/Yuppies-Abstract-1.png`, tags: ['illustration', 'abstract', 'shapes', 'decorative', 'hero', 'background'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Abstract-2.png`, tags: ['illustration', 'abstract', 'shapes', 'decorative', 'hero', 'background'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Bust.png`, tags: ['illustration', 'person', 'bust', 'portrait', 'about', 'team'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Bust-1.png`, tags: ['illustration', 'person', 'bust', 'portrait', 'about', 'team'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Chat.png`, tags: ['illustration', 'chat', 'messaging', 'communication', 'contact', 'support', 'saas'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Computer.png`, tags: ['illustration', 'computer', 'laptop', 'tech', 'work', 'developer', 'saas', 'dashboard'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Desk.png`, tags: ['illustration', 'desk', 'workspace', 'office', 'work', 'productivity'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Emails.png`, tags: ['illustration', 'email', 'inbox', 'newsletter', 'marketing', 'communication'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Lamp.png`, tags: ['illustration', 'lamp', 'light', 'decor', 'home', 'interior'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Lantern.png`, tags: ['illustration', 'lantern', 'light', 'decor', 'home', 'cozy'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Living-Area.png`, tags: ['illustration', 'living', 'room', 'interior', 'home', 'furniture', 'lifestyle'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Lounge-Chair.png`, tags: ['illustration', 'chair', 'lounge', 'furniture', 'interior', 'relax'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Managing.png`, tags: ['illustration', 'managing', 'project', 'business', 'planning', 'management', 'saas'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Managing-1.png`, tags: ['illustration', 'managing', 'project', 'business', 'planning', 'management', 'saas'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Remote-Team.png`, tags: ['illustration', 'remote', 'team', 'collaboration', 'work', 'group', 'saas', 'about'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Sitting.png`, tags: ['illustration', 'person', 'sitting', 'casual', 'relaxed', 'lifestyle'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Sitting-1.png`, tags: ['illustration', 'person', 'sitting', 'casual', 'relaxed', 'lifestyle'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Sitting-On-Chair.png`, tags: ['illustration', 'person', 'sitting', 'chair', 'casual', 'about'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Standing.png`, tags: ['illustration', 'person', 'standing', 'professional', 'hero', 'about'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Standing-1.png`, tags: ['illustration', 'person', 'standing', 'professional', 'hero', 'about'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Standing-2.png`, tags: ['illustration', 'person', 'standing', 'professional', 'hero', 'about'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Standing-3.png`, tags: ['illustration', 'person', 'standing', 'professional', 'hero', 'about'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Standing-4.png`, tags: ['illustration', 'person', 'standing', 'professional', 'hero', 'about'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Super-Idea.png`, tags: ['illustration', 'idea', 'lightbulb', 'creative', 'innovation', 'startup', 'hero', 'feature'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Wooden-Chair.png`, tags: ['illustration', 'chair', 'wooden', 'furniture', 'interior', 'decor'], category: 'illustrations' },
+  { url: `${ILLUS_BASE}/Yuppies-Work-Station.png`, tags: ['illustration', 'workstation', 'desk', 'computer', 'office', 'work', 'productivity', 'saas'], category: 'illustrations' },
 ];
 
 // Search hosted images by query (matches against tags and category)
@@ -130,6 +159,7 @@ export const getImageCatalogInstruction = () => {
   text += '- Use different images across sections — do NOT repeat the same image\n';
   text += '- These are transparent PNGs — perfect for hero sections, product cards, feature sections\n';
   text += '- AVATARS: For testimonials, team sections, user profiles — use ONLY avatar URLs from this catalog. Use non-transparent versions (without -png) for circular crops, transparent versions (with -png) for cutouts. NEVER use pravatar.cc.\n';
+  text += '- ILLUSTRATIONS: For SaaS, tech, startup, portfolio, or any modern website — use the illustrations from this catalog. They are flat-design, colorful Yuppies-style illustrations perfect for hero sections, feature explanations, about pages, and empty states. Match by tags (e.g., "computer" for tech, "chat" for messaging, "remote-team" for collaboration).\n';
   text += '- If no hosted image fits the context, use picsum.photos with a descriptive seed as fallback\n';
 
   return text;
