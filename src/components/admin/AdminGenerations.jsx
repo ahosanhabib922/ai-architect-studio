@@ -100,11 +100,12 @@ const AdminGenerations = () => {
         3. Include a main() function with runApp() that wraps the widget in MaterialApp(home: Scaffold(body: ${widgetName}())).
         4. Convert all CSS styles to Flutter equivalents (Container, Padding, Row, Column, Text, etc.).
         5. Use const constructors where possible.
-        6. Convert colors from hex to Color(0xFF______) format.
+        6. Convert colors from hex to Color(0xFF______) format. NEVER use Tailwind/CSS color names like Colors.emerald, Colors.slate, Colors.zinc etc. Only use valid Flutter Colors.* constants (e.g. Colors.green, Colors.teal, Colors.blue, Colors.red, Colors.grey, Colors.orange, Colors.purple, Colors.cyan, Colors.amber, Colors.indigo, Colors.pink, Colors.yellow, Colors.brown, Colors.lime). For custom colors always use Color(0xFF______).
         7. Convert font sizes, padding, margin to double values.
         8. Use ListView for scrollable content.
         9. Handle images with Image.network() or placeholder Icon widgets.
         10. Return ONLY the raw Dart code. Do NOT wrap in \`\`\`dart.
+        11. Code MUST compile without errors in DartPad. Do not use any non-existent classes, methods or properties.
 
         HTML TO CONVERT:
         ${cleanHTML}`;
