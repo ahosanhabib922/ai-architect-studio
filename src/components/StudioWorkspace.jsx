@@ -781,7 +781,7 @@ RULES FOR THIS EDIT:
 
       const streamResult = await generateAIResponseStream(
         fullPrompt, sysInstruction, currentAttachments,
-        'gemini-3-pro-preview',
+        'gemini-3.1-pro-preview',
         parseAndUpdateFiles,
         abortController.signal
       );
@@ -986,7 +986,7 @@ RULES FOR THIS EDIT:
       const result = await publishSite(user.uid, activeSessionId, generatedFiles, title);
       setPublishInfo(result);
       setShowPublishToast(true);
-      navigator.clipboard.writeText(result.url).catch(() => {});
+      navigator.clipboard.writeText(result.url).catch(() => { });
       setTimeout(() => setShowPublishToast(false), 4000);
     } catch (e) {
       console.error('Publish failed:', e);
