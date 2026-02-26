@@ -31,7 +31,7 @@ const buildBody = (parts, systemInstruction) => JSON.stringify({
 
 // --- Non-streaming (used for element AI edit, React export, etc.) ---
 // Returns { text, usage: { promptTokens, outputTokens, totalTokens } }
-export const generateAIResponse = async (prompt, systemInstruction, attachments = [], model = 'gemini-3.1-pro-preview') => {
+export const generateAIResponse = async (prompt, systemInstruction, attachments = [], model = 'gemini-3-pro-preview') => {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   const backoff = async (retries, delay) => {
@@ -69,7 +69,7 @@ export const generateAIResponse = async (prompt, systemInstruction, attachments 
 
 // --- Real-time streaming (used for main generation) ---
 // Returns { text, usage: { promptTokens, outputTokens, totalTokens } }
-export const generateAIResponseStream = async (prompt, systemInstruction, attachments = [], model = 'gemini-3.1-pro-preview', onChunk, signal) => {
+export const generateAIResponseStream = async (prompt, systemInstruction, attachments = [], model = 'gemini-3-pro-preview', onChunk, signal) => {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${apiKey}&alt=sse`;
   const parts = buildParts(prompt, attachments);
 

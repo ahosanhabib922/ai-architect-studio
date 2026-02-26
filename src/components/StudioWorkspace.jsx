@@ -781,7 +781,7 @@ RULES FOR THIS EDIT:
 
       const streamResult = await generateAIResponseStream(
         fullPrompt, sysInstruction, currentAttachments,
-        'gemini-3.1-pro-preview',
+        'gemini-3-pro-preview',
         parseAndUpdateFiles,
         abortController.signal
       );
