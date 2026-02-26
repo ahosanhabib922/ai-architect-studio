@@ -26,11 +26,7 @@ const buildParts = (prompt, attachments) => {
 
 const buildBody = (parts, systemInstruction) => JSON.stringify({
   contents: [{ role: "user", parts }],
-  systemInstruction: { parts: [{ text: systemInstruction }] },
-  generationConfig: {
-    temperature: 1,
-    maxOutputTokens: 65536,
-  }
+  systemInstruction: { parts: [{ text: systemInstruction }] }
 });
 
 // --- Non-streaming (used for element AI edit, React export, etc.) ---
