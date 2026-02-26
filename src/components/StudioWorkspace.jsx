@@ -688,7 +688,19 @@ const StudioWorkspace = () => {
     setGenerationStatus('Analyzing request & planning structure...');
     closeFloatingEditor();
 
-    const sysInstruction = (liveSystemInstruction || SYSTEM_INSTRUCTION) + getImageCatalogInstruction() + (templateDNA ? `\n\nSTYLE DNA (MANDATORY):\n${templateDNA}` : '');
+    // Inject random layout style for text-only prompts (no image, no template, first generation)
+    const hasImageAttachment = currentAttachments.some(a => !a.isText);
+    const isFirstGeneration = Object.keys(generatedFiles).length === 0;
+    let styleDirective = '';
+    if (!templateDNA && !hasImageAttachment && isFirstGeneration) {
+      const styles = [
+        '\n\n██ MANDATORY STYLE FOR THIS GENERATION: 🅰 EDITORIAL LAYOUT ██\nYou MUST use the 🅰 Editorial layout style for this generation. Magazine-inspired, asymmetric grids, serif headlines, elegant overlaps, warm refined palette. Do NOT use Minimal or Brutalist.',
+        '\n\n██ MANDATORY STYLE FOR THIS GENERATION: 🅱 BRUTALIST LAYOUT ██\nYou MUST use the 🅱 Brutalist layout style for this generation. Raw bold typography, broken grids, thick borders, high contrast, neon accents, hard shadows. Do NOT use Minimal or Editorial.',
+        '\n\n██ MANDATORY STYLE FOR THIS GENERATION: 🅲 MINIMAL LAYOUT ██\nYou MUST use the 🅲 Minimal layout style for this generation. Ultra-clean, spacious, soft shadows, restrained palette, maximum whitespace, gentle animations. Do NOT use Editorial or Brutalist.'
+      ];
+      styleDirective = styles[Math.floor(Math.random() * 3)];
+    }
+    const sysInstruction = (liveSystemInstruction || SYSTEM_INSTRUCTION) + getImageCatalogInstruction() + (templateDNA ? `\n\nSTYLE DNA (MANDATORY):\n${templateDNA}` : '') + styleDirective;
 
     let fullPrompt = userPrompt;
     // Context aware prompting — enforce surgical edits
