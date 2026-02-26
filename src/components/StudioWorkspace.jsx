@@ -703,7 +703,48 @@ const StudioWorkspace = () => {
     const sysInstruction = (liveSystemInstruction || SYSTEM_INSTRUCTION) + getImageCatalogInstruction() + (templateDNA ? `\n\nSTYLE DNA (MANDATORY):\n${templateDNA}` : '') + styleDirective;
 
     let fullPrompt = userPrompt;
-    // Context aware prompting — enforce surgical edits
+
+    // --- Context enrichment based on input type ---
+
+    // 1. IMAGE CONTEXT: When user uploads a reference image, enforce PHASE 0 pixel-perfect mode
+    if (hasImageAttachment) {
+      fullPrompt = `██ IMAGE REFERENCE PROVIDED — PHASE 0 ACTIVE ██
+You MUST follow PHASE 0 (Vision Analysis & Hyper-Accuracy) rules strictly.
+- MATCH the provided image EXACTLY: layout, colors, spacing, typography, shadows, borders, card styles.
+- Extract EXACT hex colors from the image — do NOT default to generic Tailwind colors.
+- Do NOT apply any of the 3 random layout styles (Editorial/Brutalist/Minimal). The image IS the design.
+- Do NOT add sections, elements, or styles that are NOT in the image.
+
+USER REQUEST: ${userPrompt}`;
+    }
+
+    // 2. PRD CONTEXT: Detect long structured prompts as PRDs and add analysis directive
+    const isPRD = userPrompt.length > 500 || /features?:|requirements?:|user stor|pages?:|screens?:|specification|overview:/i.test(userPrompt);
+    if (isPRD && !hasImageAttachment) {
+      fullPrompt = `██ PRD / DETAILED REQUIREMENTS DETECTED ██
+The user has submitted a detailed Product Requirements Document or structured brief. You MUST:
+- Read and analyze EVERY requirement, feature, and specification mentioned.
+- Do NOT skip or simplify any described feature — implement ALL of them.
+- If the PRD describes multiple pages/screens, build ALL of them (trigger FULL PROJECT AUTO-DISCOVERY).
+- Extract any mentioned colors, fonts, styles, or branding and apply them precisely.
+- If the PRD mentions a specific industry/tone, match it in design choices.
+
+FULL PRD CONTENT:
+${userPrompt}`;
+    }
+
+    // 3. CONVERSATION CONTEXT: Include recent chat history so AI understands ongoing context
+    const recentHistory = messages.filter(m => m.role === 'user' && m.type === 'text').slice(-3);
+    if (recentHistory.length > 1) {
+      const historyText = recentHistory.slice(0, -1).map((m, i) => `[Previous request ${i + 1}]: ${m.content.substring(0, 300)}`).join('\n');
+      fullPrompt = `CONVERSATION CONTEXT (previous requests in this session):
+${historyText}
+
+CURRENT REQUEST:
+${fullPrompt}`;
+    }
+
+    // 4. SURGICAL EDIT: When workspace already has files, enforce minimal changes
     if (Object.keys(generatedFiles).length > 0) {
       let filesContext = Object.entries(generatedFiles).map(([name, code]) => `[FILE: ${name}]\n${code}`).join('\n\n');
       fullPrompt = `SURGICAL EDIT REQUEST: "${userPrompt}"
