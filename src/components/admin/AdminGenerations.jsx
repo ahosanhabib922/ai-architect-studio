@@ -112,8 +112,15 @@ const AdminGenerations = () => {
       const { text: response } = await generateAIResponse(prompt, 'You are an expert Flutter/Dart developer specializing in HTML-to-Flutter conversion. You write clean, single-file Dart code compatible with DartPad.');
       let content = response.replace(/^```(dart|flutter)?\n?/, '').replace(/\n?```$/, '').trim();
 
-      const dartPadUrl = `https://dartpad.dev/?code=${encodeURIComponent(content)}`;
-      window.open(dartPadUrl, '_blank');
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${fileName.replace(/\..+$/, '')}.dart`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch (err) {
       alert('Flutter export failed: ' + err.message);
     } finally {
@@ -285,7 +292,7 @@ const AdminGenerations = () => {
                                 <button
                                   onClick={(e) => { e.stopPropagation(); exportFlutter(fileName, html); }}
                                   disabled={exportingFlutter === fileName}
-                                  className="p-1.5 text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 rounded-md transition-colors disabled:opacity-50" title="Export as Flutter (DartPad)"
+                                  className="p-1.5 text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 rounded-md transition-colors disabled:opacity-50" title="Export as Flutter/Dart"
                                 >
                                   {exportingFlutter === fileName ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Smartphone className="w-3.5 h-3.5" />}
                                 </button>

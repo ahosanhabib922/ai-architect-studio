@@ -954,9 +954,15 @@ RULES FOR THIS EDIT:
         if (user && usage) { trackTokenUsage(user.uid, usage); setUserTokensUsed(prev => prev + (usage.totalTokens || 0)); }
         let content = response.replace(/^```(dart|flutter)?\n?/, '').replace(/\n?```$/, '').trim();
 
-        // Open in DartPad
-        const dartPadUrl = `https://dartpad.dev/?code=${encodeURIComponent(content)}`;
-        window.open(dartPadUrl, '_blank');
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${activeFileName.replace(/\..+$/, '')}.dart`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       } catch (error) {
         setMessages(prev => [...prev, { role: 'model', type: 'error', content: `Flutter Export Error: ${error.message}` }]);
       } finally {
@@ -1545,7 +1551,7 @@ RULES FOR THIS EDIT:
                   </button>
                   <button onClick={() => handleExport('flutter')} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-b border-slate-100 transition-colors">
                     <Smartphone className="w-4 h-4 text-cyan-500" />
-                    <div className="flex flex-col"><span className="leading-tight">AI Export Flutter</span><span className="text-[10px] text-slate-400 leading-tight">Open in DartPad</span></div>
+                    <div className="flex flex-col"><span className="leading-tight">AI Export Flutter</span><span className="text-[10px] text-slate-400 leading-tight">Convert current tab to Dart</span></div>
                   </button>
                   <button onClick={() => handleExport('zip')} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-b border-slate-100 transition-colors">
                     <FolderDown className="w-4 h-4 text-emerald-500" />
