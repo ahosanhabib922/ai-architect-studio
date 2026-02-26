@@ -58,6 +58,7 @@ const StudioWorkspace = () => {
   const [generationStatus, setGenerationStatus] = useState('');
   const [generatingFiles, setGeneratingFiles] = useState([]); // Array of tracked files during live generation
   const [isExportingReact, setIsExportingReact] = useState(false);
+  const [isExportingFlutter, setIsExportingFlutter] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishInfo, setPublishInfo] = useState(null); // { slug, url }
   const [showPublishToast, setShowPublishToast] = useState(false);
@@ -919,6 +920,48 @@ RULES FOR THIS EDIT:
       } finally {
         setIsExportingReact(false);
       }
+
+    } else if (format === 'flutter') {
+      if (isTokenLimitReached) { alert('Token limit reached. Contact admin to reset.'); setShowExportMenu(false); return; }
+      setShowExportMenu(false);
+      setIsExportingFlutter(true);
+
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(currentHTML, 'text/html');
+      doc.querySelectorAll('script').forEach(s => s.remove());
+      const cleanHTMLForAI = doc.body.innerHTML;
+
+      try {
+        const widgetName = activeFileName.replace(/\..+$/, '').replace(/(^|[_\-. ])(\w)/g, (_, _s, c) => c.toUpperCase());
+
+        const prompt = `Convert the following HTML into a single-file Flutter widget using Material Design.
+        Rules:
+        1. Create a StatelessWidget named '${widgetName}'.
+        2. Include all necessary imports (material.dart only).
+        3. Include a main() function with runApp() that wraps the widget in MaterialApp(home: Scaffold(body: ${widgetName}())).
+        4. Convert all CSS styles to Flutter equivalents (Container, Padding, Row, Column, Text, etc.).
+        5. Use const constructors where possible.
+        6. Convert colors from hex to Color(0xFF______) format.
+        7. Convert font sizes, padding, margin to double values.
+        8. Use ListView for scrollable content.
+        9. Handle images with Image.network() or placeholder Icon widgets.
+        10. Return ONLY the raw Dart code. Do NOT wrap in \`\`\`dart.
+
+        HTML TO CONVERT:
+        ${cleanHTMLForAI}`;
+
+        const { text: response, usage } = await generateAIResponse(prompt, "You are an expert Flutter/Dart developer specializing in HTML-to-Flutter conversion. You write clean, single-file Dart code compatible with DartPad.");
+        if (user && usage) { trackTokenUsage(user.uid, usage); setUserTokensUsed(prev => prev + (usage.totalTokens || 0)); }
+        let content = response.replace(/^```(dart|flutter)?\n?/, '').replace(/\n?```$/, '').trim();
+
+        // Open in DartPad
+        const dartPadUrl = `https://dartpad.dev/?code=${encodeURIComponent(content)}`;
+        window.open(dartPadUrl, '_blank');
+      } catch (error) {
+        setMessages(prev => [...prev, { role: 'model', type: 'error', content: `Flutter Export Error: ${error.message}` }]);
+      } finally {
+        setIsExportingFlutter(false);
+      }
     }
   };
 
@@ -1483,14 +1526,14 @@ RULES FOR THIS EDIT:
               </button>
             )}
             <div className="relative border-r border-slate-200 pr-4">
-              <button onClick={() => setShowExportMenu(!showExportMenu)} disabled={Object.keys(generatedFiles).length === 0 || isExportingReact} className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 disabled:opacity-50">
-                {isExportingReact ? (
+              <button onClick={() => setShowExportMenu(!showExportMenu)} disabled={Object.keys(generatedFiles).length === 0 || isExportingReact || isExportingFlutter} className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 disabled:opacity-50">
+                {(isExportingReact || isExportingFlutter) ? (
                   <><div className="w-4 h-4 rounded-full border-2 border-slate-400 border-t-transparent animate-spin"></div> Exporting...</>
                 ) : (
                   <><Download className="w-4 h-4" /> Export <ChevronDown className={`w-3 h-3 transition-transform ${showExportMenu ? 'rotate-180' : ''}`} /></>
                 )}
               </button>
-              {showExportMenu && !isExportingReact && (
+              {showExportMenu && !isExportingReact && !isExportingFlutter && (
                 <div className="absolute right-4 top-full mt-3 w-56 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50 animate-fade-in">
                   <button onClick={() => handleExport('html')} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-b border-slate-100 transition-colors">
                     <Code className="w-4 h-4 text-[#A78BFA]" />
@@ -1499,6 +1542,10 @@ RULES FOR THIS EDIT:
                   <button onClick={() => handleExport('react')} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-b border-slate-100 transition-colors">
                     <Layout className="w-4 h-4 text-blue-500" />
                     <div className="flex flex-col"><span className="leading-tight">AI Export React</span><span className="text-[10px] text-slate-400 leading-tight">Convert current tab to JSX</span></div>
+                  </button>
+                  <button onClick={() => handleExport('flutter')} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-b border-slate-100 transition-colors">
+                    <Smartphone className="w-4 h-4 text-cyan-500" />
+                    <div className="flex flex-col"><span className="leading-tight">AI Export Flutter</span><span className="text-[10px] text-slate-400 leading-tight">Open in DartPad</span></div>
                   </button>
                   <button onClick={() => handleExport('zip')} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-b border-slate-100 transition-colors">
                     <FolderDown className="w-4 h-4 text-emerald-500" />

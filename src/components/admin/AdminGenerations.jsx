@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Sparkles, FileCode, MessageSquare, Clock, ChevronDown, ChevronUp, Eye, X, Download, FolderDown, Code, Layout, Loader } from 'lucide-react';
+import { Search, Sparkles, FileCode, MessageSquare, Clock, ChevronDown, ChevronUp, Eye, X, Download, FolderDown, Code, Layout, Loader, Smartphone } from 'lucide-react';
 import { loadAllGenerations } from '../../utils/firestoreAdmin';
 import { loadJSZip } from '../../utils/loadJSZip';
 import { generateAIResponse } from '../../utils/generateAIResponse';
@@ -11,6 +11,7 @@ const AdminGenerations = () => {
   const [expandedId, setExpandedId] = useState(null);
   const [previewHtml, setPreviewHtml] = useState(null);
   const [exportingReact, setExportingReact] = useState(null); // fileName being converted
+  const [exportingFlutter, setExportingFlutter] = useState(null); // fileName being converted
 
   const downloadFile = (fileName, content) => {
     const blob = new Blob([content], { type: 'text/html' });
@@ -80,6 +81,43 @@ const AdminGenerations = () => {
       alert('React export failed: ' + err.message);
     } finally {
       setExportingReact(null);
+    }
+  };
+
+  const exportFlutter = async (fileName, html) => {
+    setExportingFlutter(fileName);
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      doc.querySelectorAll('script').forEach(s => s.remove());
+      const cleanHTML = doc.body.innerHTML;
+      const widgetName = fileName.replace(/\..+$/, '').replace(/(^|[_\-. ])(\w)/g, (_, _s, c) => c.toUpperCase());
+
+      const prompt = `Convert the following HTML into a single-file Flutter widget using Material Design.
+        Rules:
+        1. Create a StatelessWidget named '${widgetName}'.
+        2. Include all necessary imports (material.dart only).
+        3. Include a main() function with runApp() that wraps the widget in MaterialApp(home: Scaffold(body: ${widgetName}())).
+        4. Convert all CSS styles to Flutter equivalents (Container, Padding, Row, Column, Text, etc.).
+        5. Use const constructors where possible.
+        6. Convert colors from hex to Color(0xFF______) format.
+        7. Convert font sizes, padding, margin to double values.
+        8. Use ListView for scrollable content.
+        9. Handle images with Image.network() or placeholder Icon widgets.
+        10. Return ONLY the raw Dart code. Do NOT wrap in \`\`\`dart.
+
+        HTML TO CONVERT:
+        ${cleanHTML}`;
+
+      const { text: response } = await generateAIResponse(prompt, 'You are an expert Flutter/Dart developer specializing in HTML-to-Flutter conversion. You write clean, single-file Dart code compatible with DartPad.');
+      let content = response.replace(/^```(dart|flutter)?\n?/, '').replace(/\n?```$/, '').trim();
+
+      const dartPadUrl = `https://dartpad.dev/?code=${encodeURIComponent(content)}`;
+      window.open(dartPadUrl, '_blank');
+    } catch (err) {
+      alert('Flutter export failed: ' + err.message);
+    } finally {
+      setExportingFlutter(null);
     }
   };
 
@@ -243,6 +281,13 @@ const AdminGenerations = () => {
                                   className="p-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-md transition-colors disabled:opacity-50" title="Export as React JSX"
                                 >
                                   {exportingReact === fileName ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Layout className="w-3.5 h-3.5" />}
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); exportFlutter(fileName, html); }}
+                                  disabled={exportingFlutter === fileName}
+                                  className="p-1.5 text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 rounded-md transition-colors disabled:opacity-50" title="Export as Flutter (DartPad)"
+                                >
+                                  {exportingFlutter === fileName ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Smartphone className="w-3.5 h-3.5" />}
                                 </button>
                               </div>
                             </div>
