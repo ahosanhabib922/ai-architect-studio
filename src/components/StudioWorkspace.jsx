@@ -692,94 +692,20 @@ const StudioWorkspace = () => {
     const hasImageAttachment = currentAttachments.some(a => !a.isText);
     const isFirstGeneration = Object.keys(generatedFiles).length === 0;
 
-    // --- Auto-fetch collection images for text-only prompts (visual inspiration) ---
+    // --- FAST PATH: Surgical edits get a lean prompt (no catalog, no collection, no style) ---
+    const isSurgicalEdit = Object.keys(generatedFiles).length > 0;
+
     let collectionAttachments = [];
     let collectionKey = null;
-    if (!hasImageAttachment && !templateDNA && isFirstGeneration) {
-      collectionKey = matchCollection(userPrompt);
-      if (collectionKey) {
-        setGenerationStatus('Loading design inspiration...');
-        collectionAttachments = await fetchCollectionImages(collectionKey);
-      }
-    }
-    // Merge collection images into attachments (sent as inlineData to Gemini)
-    const allAttachments = [...currentAttachments, ...collectionAttachments];
-    const hasCollectionImages = collectionAttachments.length > 0;
-
-    // Inject random layout style for text-only prompts (no image, no template, first generation)
     let styleDirective = '';
-    if (!templateDNA && !hasImageAttachment && isFirstGeneration) {
-      const styles = [
-        '\n\n██ MANDATORY STYLE FOR THIS GENERATION: 🅰 MODERN CLEAN LAYOUT ██\nYou MUST use the 🅰 Modern Clean layout style. Contemporary, polished, professional — clean grids, gradient CTAs, glassmorphic navbar, soft shadows, vibrant primary color. The gold standard for SaaS and business sites.',
-        '\n\n██ MANDATORY STYLE FOR THIS GENERATION: 🅱 EDITORIAL LAYOUT ██\nYou MUST use the 🅱 Editorial layout style. Magazine-inspired, asymmetric grids, oversized serif headlines, elegant overlaps, warm refined cream palette, pull-quotes, editorial tension.',
-        '\n\n██ MANDATORY STYLE FOR THIS GENERATION: 🅲 MINIMAL LAYOUT ██\nYou MUST use the 🅲 Minimal layout style. Ultra-clean, spacious, maximum whitespace, soft shadows, restrained muted palette, gentle fade-in animations. Everything whispers, nothing shouts.',
-        '\n\n██ MANDATORY STYLE FOR THIS GENERATION: 🅳 3D / GLASSMORPHISM LAYOUT ██\nYou MUST use the 🅳 3D / Glassmorphism layout style. Layered glass panels with backdrop-blur, dark gradient mesh backgrounds, glowing accent orbs, CSS 3D transforms, depth-rich immersive design.',
-        '\n\n██ MANDATORY STYLE FOR THIS GENERATION: 🅴 PARALLAX / ANIMATED LAYOUT ██\nYou MUST use the 🅴 Parallax / Animated layout style. Scroll-driven cinematic experience — parallax layers, scroll-triggered reveal animations, staggered fade-ins, full-screen sections, dynamic storytelling.',
-        '\n\n██ MANDATORY STYLE FOR THIS GENERATION: 🅵 DARK PREMIUM LAYOUT ██\nYou MUST use the 🅵 Dark Premium layout style. Sleek dark backgrounds (#09090B), refined light accents, subtle glow effects, noise textures, one signature accent color, dark glassmorphic cards.'
-      ];
-      styleDirective = styles[Math.floor(Math.random() * 6)];
-    }
-
-    const sysInstruction = (liveSystemInstruction || SYSTEM_INSTRUCTION) + getImageCatalogInstruction() + (templateDNA ? `\n\nSTYLE DNA (MANDATORY):\n${templateDNA}` : '') + styleDirective;
-
+    let allAttachments = currentAttachments;
     let fullPrompt = userPrompt;
+    let sysInstruction;
 
-    // --- Context enrichment based on input type ---
+    if (isSurgicalEdit) {
+      // EDIT MODE: Minimal system instruction — just core rules + surgical edit context
+      sysInstruction = liveSystemInstruction || SYSTEM_INSTRUCTION;
 
-    // 1. COLLECTION INSPIRATION: Auto-fetched design reference images from curated collection
-    if (hasCollectionImages) {
-      const col = collectionKey ? { label: collectionKey } : {};
-      fullPrompt = `██ DESIGN INSPIRATION IMAGES PROVIDED ██
-The attached images are curated design references for a "${col.label}" project. Use them as VISUAL INSPIRATION:
-- Study the layout patterns, color palettes, typography styles, and visual hierarchy from these images.
-- Create an ORIGINAL design inspired by these references — do NOT pixel-copy them.
-- Extract the overall mood, spacing rhythm, and design quality from the references.
-- Apply the user's specific requirements on top of this visual foundation.
-- Use the actual image URLs from the HOSTED IMAGE CATALOG for the final HTML output (not the reference images themselves).
-
-USER REQUEST: ${userPrompt}`;
-    }
-
-    // 2. IMAGE CONTEXT: When user uploads a reference image, enforce PHASE 0 pixel-perfect mode
-    if (hasImageAttachment) {
-      fullPrompt = `██ IMAGE REFERENCE PROVIDED — PHASE 0 ACTIVE ██
-You MUST follow PHASE 0 (Vision Analysis & Hyper-Accuracy) rules strictly.
-- MATCH the provided image EXACTLY: layout, colors, spacing, typography, shadows, borders, card styles.
-- Extract EXACT hex colors from the image — do NOT default to generic Tailwind colors.
-- Do NOT apply any of the 3 random layout styles (Editorial/Brutalist/Minimal). The image IS the design.
-- Do NOT add sections, elements, or styles that are NOT in the image.
-
-USER REQUEST: ${userPrompt}`;
-    }
-
-    // 3. PRD CONTEXT: Detect long structured prompts as PRDs and add analysis directive
-    const isPRD = userPrompt.length > 500 || /features?:|requirements?:|user stor|pages?:|screens?:|specification|overview:/i.test(userPrompt);
-    if (isPRD && !hasImageAttachment) {
-      fullPrompt = `██ PRD / DETAILED REQUIREMENTS DETECTED ██
-The user has submitted a detailed Product Requirements Document or structured brief. You MUST:
-- Read and analyze EVERY requirement, feature, and specification mentioned.
-- Do NOT skip or simplify any described feature — implement ALL of them.
-- If the PRD describes multiple pages/screens, build ALL of them (trigger FULL PROJECT AUTO-DISCOVERY).
-- Extract any mentioned colors, fonts, styles, or branding and apply them precisely.
-- If the PRD mentions a specific industry/tone, match it in design choices.
-
-FULL PRD CONTENT:
-${userPrompt}`;
-    }
-
-    // 4. CONVERSATION CONTEXT: Include recent chat history so AI understands ongoing context
-    const recentHistory = messages.filter(m => m.role === 'user' && m.type === 'text').slice(-3);
-    if (recentHistory.length > 1) {
-      const historyText = recentHistory.slice(0, -1).map((m, i) => `[Previous request ${i + 1}]: ${m.content.substring(0, 300)}`).join('\n');
-      fullPrompt = `CONVERSATION CONTEXT (previous requests in this session):
-${historyText}
-
-CURRENT REQUEST:
-${fullPrompt}`;
-    }
-
-    // 5. SURGICAL EDIT: When workspace already has files, enforce minimal changes
-    if (Object.keys(generatedFiles).length > 0) {
       let filesContext = Object.entries(generatedFiles).map(([name, code]) => `[FILE: ${name}]\n${code}`).join('\n\n');
       fullPrompt = `SURGICAL EDIT REQUEST: "${userPrompt}"
 
@@ -792,6 +718,54 @@ RULES FOR THIS EDIT:
 3. Do NOT redesign, restyle, rearrange, or "improve" anything the user did not ask to change.
 4. Do NOT return unchanged files.
 5. Each returned file must be COMPLETE standalone HTML (full file, not a snippet).`;
+
+    } else {
+      // FIRST GENERATION: Full system instruction with catalog, style, and collection
+
+      // Auto-fetch collection images (1 image only for speed)
+      if (!hasImageAttachment && !templateDNA) {
+        collectionKey = matchCollection(userPrompt);
+        if (collectionKey) {
+          setGenerationStatus('Loading design inspiration...');
+          collectionAttachments = await fetchCollectionImages(collectionKey);
+        }
+      }
+      allAttachments = [...currentAttachments, ...collectionAttachments];
+      const hasCollectionImages = collectionAttachments.length > 0;
+
+      // Random layout style
+      if (!templateDNA && !hasImageAttachment) {
+        const styles = [
+          '\n\n██ MANDATORY STYLE: 🅰 MODERN CLEAN ██\nUse Modern Clean layout. Clean grids, gradient CTAs, glassmorphic navbar, soft shadows, vibrant primary color.',
+          '\n\n██ MANDATORY STYLE: 🅱 EDITORIAL ██\nUse Editorial layout. Asymmetric grids, oversized serif headlines, elegant overlaps, warm cream palette.',
+          '\n\n██ MANDATORY STYLE: 🅲 MINIMAL ██\nUse Minimal layout. Maximum whitespace, soft shadows, restrained muted palette, gentle fade-in animations.',
+          '\n\n██ MANDATORY STYLE: 🅳 3D / GLASSMORPHISM ██\nUse 3D/Glassmorphism layout. Glass panels with backdrop-blur, dark gradient mesh, glowing orbs, CSS 3D transforms.',
+          '\n\n██ MANDATORY STYLE: 🅴 PARALLAX / ANIMATED ██\nUse Parallax/Animated layout. Scroll-triggered reveals, parallax layers, staggered fade-ins, cinematic pacing.',
+          '\n\n██ MANDATORY STYLE: 🅵 DARK PREMIUM ██\nUse Dark Premium layout. Dark backgrounds (#09090B), subtle glows, noise texture, one signature accent color.'
+        ];
+        styleDirective = styles[Math.floor(Math.random() * 6)];
+      }
+
+      sysInstruction = (liveSystemInstruction || SYSTEM_INSTRUCTION) + getImageCatalogInstruction() + (templateDNA ? `\n\nSTYLE DNA (MANDATORY):\n${templateDNA}` : '') + styleDirective;
+
+      // Prompt enrichment for first generation
+      if (hasCollectionImages) {
+        fullPrompt = `██ DESIGN INSPIRATION IMAGES PROVIDED ██
+Use attached images as VISUAL INSPIRATION for a "${collectionKey}" project. Create an ORIGINAL design inspired by them — do NOT pixel-copy. Apply the user's requirements on top.
+
+USER REQUEST: ${userPrompt}`;
+      } else if (hasImageAttachment) {
+        fullPrompt = `██ IMAGE REFERENCE — PHASE 0 ACTIVE ██
+MATCH the provided image EXACTLY: layout, colors, spacing, typography. Do NOT apply random layout styles.
+
+USER REQUEST: ${userPrompt}`;
+      }
+
+      // PRD detection
+      const isPRD = userPrompt.length > 500 || /features?:|requirements?:|user stor|pages?:|screens?:|specification|overview:/i.test(userPrompt);
+      if (isPRD && !hasImageAttachment) {
+        fullPrompt = `██ PRD DETECTED ██\nAnalyze ALL requirements. Build ALL mentioned pages/screens. Extract colors, fonts, branding.\n\n${userPrompt}`;
+      }
     }
 
     const abortController = new AbortController();

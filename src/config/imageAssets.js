@@ -319,9 +319,9 @@ export const fetchCollectionImages = async (collectionKey) => {
   const col = IMAGE_COLLECTIONS[collectionKey];
   if (!col) return [];
 
-  // Shuffle all available images and pick up to 3
+  // Shuffle and pick 1 image (keeps token cost low + fast fetch)
   const entries = Object.entries(col.images);
-  const shuffled = entries.sort(() => Math.random() - 0.5).slice(0, 3);
+  const shuffled = entries.sort(() => Math.random() - 0.5).slice(0, 1);
 
   const attachments = [];
   for (const [slot, url] of shuffled) {
