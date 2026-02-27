@@ -165,4 +165,185 @@ export const getImageCatalogInstruction = () => {
   return text;
 };
 
+// --- UI Template Image Collections (industry-themed, for text-prompt generations) ---
+const COLLECTION_BASE = 'https://expritor.com/collections';
+
+export const IMAGE_COLLECTIONS = {
+  saas: {
+    label: 'SaaS / Tech Startup',
+    keywords: ['saas', 'software', 'platform', 'app', 'startup', 'tool', 'analytics', 'crm', 'erp', 'api', 'cloud', 'automation', 'workflow', 'productivity', 'project management', 'ai ', 'machine learning', 'devtool', 'b2b'],
+    images: {
+      'hero-1': `${COLLECTION_BASE}/saas/hero/hero-1.webp`,
+      'hero-2': `${COLLECTION_BASE}/saas/hero/hero-2.webp`,
+      'hero-3': `${COLLECTION_BASE}/saas/hero/hero-3.webp`,
+      'hero-4': `${COLLECTION_BASE}/saas/hero/hero-4.webp`,
+      'hero-5': `${COLLECTION_BASE}/saas/hero/hero-5.webp`,
+      'hero-6': `${COLLECTION_BASE}/saas/hero/hero-6.webp`,
+      'hero-7': `${COLLECTION_BASE}/saas/hero/hero-7.webp`,
+      'hero-8': `${COLLECTION_BASE}/saas/hero/hero-8.webp`,
+    }
+  },
+  ecommerce: {
+    label: 'E-commerce / Retail',
+    keywords: ['ecommerce', 'e-commerce', 'shop', 'store', 'retail', 'product', 'marketplace', 'cart', 'fashion', 'clothing', 'accessories', 'electronics', 'grocery', 'boutique'],
+    images: {
+      'hero-1': `${COLLECTION_BASE}/ecommerce/hero-1.webp`,
+      'product-1': `${COLLECTION_BASE}/ecommerce/product-1.webp`,
+      'product-2': `${COLLECTION_BASE}/ecommerce/product-2.webp`,
+      'product-3': `${COLLECTION_BASE}/ecommerce/product-3.webp`,
+      'category-1': `${COLLECTION_BASE}/ecommerce/category-1.webp`,
+      'banner': `${COLLECTION_BASE}/ecommerce/banner.webp`,
+      'lifestyle': `${COLLECTION_BASE}/ecommerce/lifestyle.webp`,
+    }
+  },
+  restaurant: {
+    label: 'Restaurant / Food',
+    keywords: ['restaurant', 'food', 'cafe', 'coffee', 'bakery', 'pizzeria', 'sushi', 'bar', 'bistro', 'catering', 'menu', 'dining', 'recipe', 'kitchen', 'chef'],
+    images: {
+      'hero-1': `${COLLECTION_BASE}/restaurant/hero-1.webp`,
+      'dish-1': `${COLLECTION_BASE}/restaurant/dish-1.webp`,
+      'dish-2': `${COLLECTION_BASE}/restaurant/dish-2.webp`,
+      'interior': `${COLLECTION_BASE}/restaurant/interior.webp`,
+      'chef': `${COLLECTION_BASE}/restaurant/chef.webp`,
+      'ambience': `${COLLECTION_BASE}/restaurant/ambience.webp`,
+    }
+  },
+  portfolio: {
+    label: 'Portfolio / Creative',
+    keywords: ['portfolio', 'creative', 'freelance', 'designer', 'photographer', 'artist', 'agency', 'studio', 'personal', 'showcase', 'gallery'],
+    images: {
+      'hero-1': `${COLLECTION_BASE}/portfolio/hero-1.webp`,
+      'project-1': `${COLLECTION_BASE}/portfolio/project-1.webp`,
+      'project-2': `${COLLECTION_BASE}/portfolio/project-2.webp`,
+      'project-3': `${COLLECTION_BASE}/portfolio/project-3.webp`,
+      'workspace': `${COLLECTION_BASE}/portfolio/workspace.webp`,
+      'profile': `${COLLECTION_BASE}/portfolio/profile.webp`,
+    }
+  },
+  corporate: {
+    label: 'Corporate / Business',
+    keywords: ['corporate', 'business', 'consulting', 'finance', 'accounting', 'law', 'legal', 'insurance', 'bank', 'enterprise', 'b2b', 'professional services', 'agency'],
+    images: {
+      'hero-1': `${COLLECTION_BASE}/corporate/hero-1.webp`,
+      'team-1': `${COLLECTION_BASE}/corporate/team-1.webp`,
+      'office': `${COLLECTION_BASE}/corporate/office.webp`,
+      'meeting': `${COLLECTION_BASE}/corporate/meeting.webp`,
+      'service-1': `${COLLECTION_BASE}/corporate/service-1.webp`,
+      'cta': `${COLLECTION_BASE}/corporate/cta.webp`,
+    }
+  },
+  medical: {
+    label: 'Medical / Health',
+    keywords: ['medical', 'health', 'hospital', 'clinic', 'doctor', 'dental', 'pharmacy', 'wellness', 'fitness', 'yoga', 'therapy', 'mental health', 'healthcare'],
+    images: {
+      'hero-1': `${COLLECTION_BASE}/medical/hero-1.webp`,
+      'doctor': `${COLLECTION_BASE}/medical/doctor.webp`,
+      'facility': `${COLLECTION_BASE}/medical/facility.webp`,
+      'service-1': `${COLLECTION_BASE}/medical/service-1.webp`,
+      'service-2': `${COLLECTION_BASE}/medical/service-2.webp`,
+      'cta': `${COLLECTION_BASE}/medical/cta.webp`,
+    }
+  },
+  education: {
+    label: 'Education / Learning',
+    keywords: ['education', 'school', 'university', 'college', 'course', 'learning', 'lms', 'tutorial', 'training', 'academy', 'e-learning', 'online course', 'student'],
+    images: {
+      'hero-1': `${COLLECTION_BASE}/education/hero-1.webp`,
+      'classroom': `${COLLECTION_BASE}/education/classroom.webp`,
+      'student': `${COLLECTION_BASE}/education/student.webp`,
+      'course-1': `${COLLECTION_BASE}/education/course-1.webp`,
+      'course-2': `${COLLECTION_BASE}/education/course-2.webp`,
+      'campus': `${COLLECTION_BASE}/education/campus.webp`,
+    }
+  },
+  realestate: {
+    label: 'Real Estate / Property',
+    keywords: ['real estate', 'property', 'housing', 'apartment', 'rental', 'hotel', 'resort', 'villa', 'interior design', 'architecture', 'home', 'listing'],
+    images: {
+      'hero-1': `${COLLECTION_BASE}/realestate/hero-1.webp`,
+      'property-1': `${COLLECTION_BASE}/realestate/property-1.webp`,
+      'property-2': `${COLLECTION_BASE}/realestate/property-2.webp`,
+      'interior': `${COLLECTION_BASE}/realestate/interior.webp`,
+      'exterior': `${COLLECTION_BASE}/realestate/exterior.webp`,
+      'agent': `${COLLECTION_BASE}/realestate/agent.webp`,
+    }
+  },
+  travel: {
+    label: 'Travel / Tourism',
+    keywords: ['travel', 'tourism', 'hotel', 'booking', 'flight', 'vacation', 'adventure', 'trip', 'tour', 'destination', 'airbnb', 'hostel'],
+    images: {
+      'hero-1': `${COLLECTION_BASE}/travel/hero-1.webp`,
+      'destination-1': `${COLLECTION_BASE}/travel/destination-1.webp`,
+      'destination-2': `${COLLECTION_BASE}/travel/destination-2.webp`,
+      'experience': `${COLLECTION_BASE}/travel/experience.webp`,
+      'hotel': `${COLLECTION_BASE}/travel/hotel.webp`,
+      'cta': `${COLLECTION_BASE}/travel/cta.webp`,
+    }
+  },
+  fitness: {
+    label: 'Fitness / Sports',
+    keywords: ['fitness', 'gym', 'sport', 'workout', 'training', 'crossfit', 'boxing', 'running', 'athletic', 'bodybuilding', 'personal trainer'],
+    images: {
+      'hero-1': `${COLLECTION_BASE}/fitness/hero-1.webp`,
+      'workout-1': `${COLLECTION_BASE}/fitness/workout-1.webp`,
+      'workout-2': `${COLLECTION_BASE}/fitness/workout-2.webp`,
+      'trainer': `${COLLECTION_BASE}/fitness/trainer.webp`,
+      'facility': `${COLLECTION_BASE}/fitness/facility.webp`,
+      'cta': `${COLLECTION_BASE}/fitness/cta.webp`,
+    }
+  },
+};
+
+// Match user prompt to the best image collection
+export const matchCollection = (prompt) => {
+  const lower = prompt.toLowerCase();
+  let bestMatch = null;
+  let bestScore = 0;
+
+  for (const [key, col] of Object.entries(IMAGE_COLLECTIONS)) {
+    const score = col.keywords.filter(kw => lower.includes(kw)).length;
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = key;
+    }
+  }
+
+  return bestMatch;
+};
+
+// Fetch collection images as base64 attachments for Gemini vision input
+// Returns array of { name, type, isText: false, data } — same shape as user attachments
+// Randomly picks from available images so each generation gets different inspiration
+export const fetchCollectionImages = async (collectionKey) => {
+  if (!collectionKey) return [];
+  const col = IMAGE_COLLECTIONS[collectionKey];
+  if (!col) return [];
+
+  // Shuffle all available images and pick up to 3
+  const entries = Object.entries(col.images);
+  const shuffled = entries.sort(() => Math.random() - 0.5).slice(0, 3);
+
+  const attachments = [];
+  for (const [slot, url] of shuffled) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const blob = await res.blob();
+      const dataUrl = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+      });
+      attachments.push({
+        name: `collection-${collectionKey}-${slot}.webp`,
+        type: blob.type || 'image/webp',
+        isText: false,
+        data: dataUrl,
+      });
+    } catch { /* skip failed fetches — image not hosted yet */ }
+  }
+
+  return attachments;
+};
+
 export default IMAGE_CATALOG;

@@ -15,7 +15,7 @@ import {
 import { TEMPLATES } from '../config/templates';
 import { DEFAULT_MESSAGES, generateChatId } from '../config/constants';
 import { SYSTEM_INSTRUCTION, unsplashKey } from '../config/api';
-import { getImageCatalogInstruction, searchHostedImages, getCategories } from '../config/imageAssets';
+import { getImageCatalogInstruction, searchHostedImages, getCategories, matchCollection, fetchCollectionImages } from '../config/imageAssets';
 import { publishSite, unpublishSite, getPublishInfo } from '../utils/publishSite';
 import { loadInstructionsFromFirestore } from '../utils/firestoreAdmin';
 import { loadJSZip } from '../utils/loadJSZip';
@@ -688,11 +688,27 @@ const StudioWorkspace = () => {
     setGenerationStatus('Analyzing request & planning structure...');
     closeFloatingEditor();
 
-    // Inject random layout style for text-only prompts (no image, no template, first generation)
+    // Detect context
     const hasImageAttachment = currentAttachments.some(a => !a.isText);
     const isFirstGeneration = Object.keys(generatedFiles).length === 0;
+
+    // --- Auto-fetch collection images for text-only prompts (visual inspiration) ---
+    let collectionAttachments = [];
+    let collectionKey = null;
+    if (!hasImageAttachment && !templateDNA && isFirstGeneration) {
+      collectionKey = matchCollection(userPrompt);
+      if (collectionKey) {
+        setGenerationStatus('Loading design inspiration...');
+        collectionAttachments = await fetchCollectionImages(collectionKey);
+      }
+    }
+    // Merge collection images into attachments (sent as inlineData to Gemini)
+    const allAttachments = [...currentAttachments, ...collectionAttachments];
+    const hasCollectionImages = collectionAttachments.length > 0;
+
+    // Inject random layout style for text-only prompts (no image, no template, first generation)
     let styleDirective = '';
-    if (!templateDNA && !hasImageAttachment && isFirstGeneration) {
+    if (!templateDNA && !hasImageAttachment && !hasCollectionImages && isFirstGeneration) {
       const styles = [
         '\n\n██ MANDATORY STYLE FOR THIS GENERATION: 🅰 EDITORIAL LAYOUT ██\nYou MUST use the 🅰 Editorial layout style for this generation. Magazine-inspired, asymmetric grids, serif headlines, elegant overlaps, warm refined palette. Do NOT use Minimal or Brutalist.',
         '\n\n██ MANDATORY STYLE FOR THIS GENERATION: 🅱 BRUTALIST LAYOUT ██\nYou MUST use the 🅱 Brutalist layout style for this generation. Raw bold typography, broken grids, thick borders, high contrast, neon accents, hard shadows. Do NOT use Minimal or Editorial.',
@@ -700,13 +716,28 @@ const StudioWorkspace = () => {
       ];
       styleDirective = styles[Math.floor(Math.random() * 3)];
     }
+
     const sysInstruction = (liveSystemInstruction || SYSTEM_INSTRUCTION) + getImageCatalogInstruction() + (templateDNA ? `\n\nSTYLE DNA (MANDATORY):\n${templateDNA}` : '') + styleDirective;
 
     let fullPrompt = userPrompt;
 
     // --- Context enrichment based on input type ---
 
-    // 1. IMAGE CONTEXT: When user uploads a reference image, enforce PHASE 0 pixel-perfect mode
+    // 1. COLLECTION INSPIRATION: Auto-fetched design reference images from curated collection
+    if (hasCollectionImages) {
+      const col = collectionKey ? { label: collectionKey } : {};
+      fullPrompt = `██ DESIGN INSPIRATION IMAGES PROVIDED ██
+The attached images are curated design references for a "${col.label}" project. Use them as VISUAL INSPIRATION:
+- Study the layout patterns, color palettes, typography styles, and visual hierarchy from these images.
+- Create an ORIGINAL design inspired by these references — do NOT pixel-copy them.
+- Extract the overall mood, spacing rhythm, and design quality from the references.
+- Apply the user's specific requirements on top of this visual foundation.
+- Use the actual image URLs from the HOSTED IMAGE CATALOG for the final HTML output (not the reference images themselves).
+
+USER REQUEST: ${userPrompt}`;
+    }
+
+    // 2. IMAGE CONTEXT: When user uploads a reference image, enforce PHASE 0 pixel-perfect mode
     if (hasImageAttachment) {
       fullPrompt = `██ IMAGE REFERENCE PROVIDED — PHASE 0 ACTIVE ██
 You MUST follow PHASE 0 (Vision Analysis & Hyper-Accuracy) rules strictly.
@@ -718,7 +749,7 @@ You MUST follow PHASE 0 (Vision Analysis & Hyper-Accuracy) rules strictly.
 USER REQUEST: ${userPrompt}`;
     }
 
-    // 2. PRD CONTEXT: Detect long structured prompts as PRDs and add analysis directive
+    // 3. PRD CONTEXT: Detect long structured prompts as PRDs and add analysis directive
     const isPRD = userPrompt.length > 500 || /features?:|requirements?:|user stor|pages?:|screens?:|specification|overview:/i.test(userPrompt);
     if (isPRD && !hasImageAttachment) {
       fullPrompt = `██ PRD / DETAILED REQUIREMENTS DETECTED ██
@@ -733,7 +764,7 @@ FULL PRD CONTENT:
 ${userPrompt}`;
     }
 
-    // 3. CONVERSATION CONTEXT: Include recent chat history so AI understands ongoing context
+    // 4. CONVERSATION CONTEXT: Include recent chat history so AI understands ongoing context
     const recentHistory = messages.filter(m => m.role === 'user' && m.type === 'text').slice(-3);
     if (recentHistory.length > 1) {
       const historyText = recentHistory.slice(0, -1).map((m, i) => `[Previous request ${i + 1}]: ${m.content.substring(0, 300)}`).join('\n');
@@ -744,7 +775,7 @@ CURRENT REQUEST:
 ${fullPrompt}`;
     }
 
-    // 4. SURGICAL EDIT: When workspace already has files, enforce minimal changes
+    // 5. SURGICAL EDIT: When workspace already has files, enforce minimal changes
     if (Object.keys(generatedFiles).length > 0) {
       let filesContext = Object.entries(generatedFiles).map(([name, code]) => `[FILE: ${name}]\n${code}`).join('\n\n');
       fullPrompt = `SURGICAL EDIT REQUEST: "${userPrompt}"
@@ -833,7 +864,7 @@ RULES FOR THIS EDIT:
       };
 
       const streamResult = await generateAIResponseStream(
-        fullPrompt, sysInstruction, currentAttachments,
+        fullPrompt, sysInstruction, allAttachments,
         'gemini-3-pro-preview',
         parseAndUpdateFiles,
         abortController.signal
