@@ -159,7 +159,7 @@ export const getImageCatalogInstruction = () => {
   text += '- Use different images across sections — do NOT repeat the same image\n';
   text += '- These are transparent PNGs — perfect for hero sections, product cards, feature sections\n';
   text += '- AVATARS: For testimonials, team sections, user profiles — use ONLY avatar URLs from this catalog. Use non-transparent versions (without -png) for circular crops, transparent versions (with -png) for cutouts. NEVER use pravatar.cc.\n';
-  text += '- ILLUSTRATIONS: For SaaS, tech, startup, portfolio, or any modern website — use the illustrations from this catalog. They are flat-design, colorful Yuppies-style illustrations perfect for hero sections, feature explanations, about pages, and empty states. Match by tags (e.g., "computer" for tech, "chat" for messaging, "remote-team" for collaboration).\n';
+  text += '- ILLUSTRATIONS: ONLY use these Yuppies-style illustrations if the user EXPLICITLY asks for illustrations. NEVER add illustrations by default. If the user does not request illustrations, use photos (picsum.photos) + icons (Lucide) instead.\n';
   text += '- If no hosted image fits the context, use picsum.photos with a descriptive seed as fallback\n';
 
   return text;

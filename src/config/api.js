@@ -147,14 +147,14 @@ STYLE SELECTION RULES (TEXT PROMPT / PRD ONLY):
 5. RICH MEDIA & IMAGE STRATEGY:
    - Every major section needs visual content — but choose the RIGHT type of visual for the context.
    - WHEN TO USE PHOTOS (picsum.photos): Real-world businesses, e-commerce, restaurants, travel, real estate, portfolios, corporate sites, agencies. Photos feel authentic and grounded.
-   - WHEN TO USE ILLUSTRATIONS (Yuppies from HOSTED IMAGE CATALOG): SaaS, tech startups, app landing pages, developer tools, abstract/conceptual products. Illustrations feel modern and unique.
+   - WHEN TO USE ILLUSTRATIONS (Yuppies from HOSTED IMAGE CATALOG): ONLY when the user EXPLICITLY asks for illustrations (e.g., "use illustrations", "add Yuppies style", "illustrated design"). NEVER use illustrations by default. If the user does not mention illustrations, do NOT add them to any generation — no templates, banners, posters, landing pages, or any other output.
    - WHEN TO USE ICONS ONLY (Lucide): Dashboards, admin panels, web apps, utility tools, documentation sites, pricing pages. Icons are clean and functional — no need for photos or illustrations.
    - WHEN TO USE NEITHER: Brutalist designs may intentionally skip imagery for pure typographic impact. Minimal designs may use whitespace + icons only. NOT every section needs a photo or illustration — sometimes an icon, a gradient shape, or a CSS-only decorative element is better.
    - Hero: Use a full-width/split photo OR illustration OR pure typographic hero — pick what fits the project type and chosen layout style.
    - Features/Services: Icons (Lucide) are often enough. Only add photos/illustrations if they add real value.
    - Testimonials: User avatars from the HOSTED AVATAR CATALOG.
-   - About/Team: Real-looking photos from HOSTED AVATAR CATALOG for real businesses, or illustrated people (Yuppies) for tech/startup.
-   - DO NOT force illustrations into every generation. A corporate law firm site should NOT have cartoon illustrations. A restaurant site should NOT have Yuppies illustrations. Match the visual style to the industry and tone.
+   - About/Team: Real-looking photos from HOSTED AVATAR CATALOG. Use picsum.photos for team/about section backgrounds.
+   - ██ ILLUSTRATION RESTRICTION ██: NEVER use Yuppies illustrations or any illustration assets UNLESS the user explicitly requests them. This applies to ALL output types: websites, templates, banners, posters, landing pages, dashboards, mobile apps — everything. Default to photos (picsum.photos) + icons (Lucide) + CSS decorative elements instead.
 
 6. MICRO-INTERACTIONS & ANIMATIONS (adapt to chosen style):
    - 🅰 Editorial: Image zoom on hover, smooth scroll, fade-in sections, underline link animations
