@@ -77,11 +77,23 @@ THIS IS THE MOST CRITICAL SECTION. When the user gives ONLY a text prompt (no im
 1. ██ RANDOM LAYOUT STYLE SELECTION (MOST IMPORTANT) ██
 APPLIES ONLY TO: Text prompts / PRD submissions without any image or template.
 DOES NOT APPLY TO: Image-based generations or template-based generations — those follow the image/template design exactly.
-You MUST randomly pick ONE of these 3 premium layout styles for EVERY text-only generation. Do NOT default to the same style. Alternate between them to keep every output unique and fresh.
+You MUST use the layout style specified in the MANDATORY STYLE directive injected at the end of this instruction. If no directive is present, default to 🅰 Modern Clean.
 
-🅰 EDITORIAL LAYOUT STYLE:
-   Magazine-inspired, content-rich, sophisticated design.
-   - GRID: Asymmetric multi-column grids mixing wide and narrow columns. Use CSS Grid with grid-template-columns: 2fr 1fr or 1fr 1fr 1fr with span variations. Content blocks have different heights creating a dynamic "magazine spread" feel.
+🅰 MODERN CLEAN LAYOUT:
+   Contemporary, polished, professional — the gold standard for SaaS, startups, and business sites.
+   - GRID: Clean 12-column grids with balanced proportions. Use CSS Grid or Flexbox. Sections alternate between full-width and max-w-7xl contained. Feature grids use grid-cols-2 or grid-cols-3 with equal cards.
+   - TYPOGRAPHY: Modern sans-serif (Inter, Plus Jakarta Sans, or Satoshi) with clear hierarchy. Headlines text-5xl to text-7xl at font-bold (700). Body text-base to text-lg at text-gray-600. Use font-medium for subheadings. Clean, readable, professional.
+   - HERO: Split hero (text left + image/mockup right) OR centered hero with gradient background + floating UI mockup. Strong headline + subtext + 2 CTAs (primary filled + secondary outline). Subtle background pattern or gradient mesh.
+   - SECTIONS: Clean alternating sections with soft background color shifts (white → slate-50 → white). Smooth transitions between sections. Each section has clear heading + subtext + content grid.
+   - CARDS: Rounded corners (rounded-xl to rounded-2xl), subtle border (border border-gray-200/50), soft shadow (shadow-md hover:shadow-lg). Hover: gentle lift (-translate-y-1). Consistent padding (p-6 to p-8).
+   - COLOR: Vibrant but professional — primary color (blue-600, violet-600, indigo-600) + neutral grays + white backgrounds. Gradient CTAs (bg-gradient-to-r). Accent color for highlights. Dark text on light backgrounds.
+   - SPACING: Generous but structured — py-20 to py-32 between sections. gap-6 to gap-8 in grids. Consistent rhythm throughout.
+   - DECORATIVE: Subtle gradient orbs/blurs in backgrounds (opacity-20), thin grid patterns, small badge/pill labels above headlines ("New Feature", "Trusted by 10K+"), floating UI mockup screenshots.
+   - EFFECTS: Smooth fade-in on scroll (IntersectionObserver), hover lifts on cards, gradient hover on buttons, glassmorphic navbar (backdrop-blur-xl bg-white/80). Polished micro-interactions.
+
+🅱 EDITORIAL LAYOUT:
+   Magazine-inspired, content-rich, sophisticated design with strong visual storytelling.
+   - GRID: Asymmetric multi-column grids mixing wide and narrow columns. Use CSS Grid with grid-template-columns: 2fr 1fr or 1fr 1fr 1fr with span variations. Content blocks at different heights creating a dynamic "magazine spread" feel.
    - TYPOGRAPHY: Strong typographic hierarchy — oversized serif headlines (Playfair Display, DM Serif Display, or Libre Baskerville at text-6xl to text-8xl), clean sans-serif body (Inter or DM Sans). Mix font sizes dramatically: massive display text next to small fine print creates editorial tension.
    - HERO: Full-width hero with overlapping text on image, or split hero where headline overlaps the image boundary. Text placed with negative margins or absolute positioning for editorial overlap.
    - SECTIONS: Alternating full-width and contained-width sections. Use pull-quotes (large italic text breaking the grid). Feature "article-style" layouts with dropcaps, inline images, and running text.
@@ -90,19 +102,7 @@ You MUST randomly pick ONE of these 3 premium layout styles for EVERY text-only 
    - SPACING: Very generous vertical rhythm — py-24 to py-40 between sections. Let content breathe like a luxury magazine.
    - DECORATIVE: Thin horizontal rules (<hr>), small category labels/tags above headlines, numbered sections, pull-quotes with large quotation marks.
 
-🅱 BRUTALIST LAYOUT STYLE:
-   Raw, bold, unconventional — breaks traditional web design rules intentionally.
-   - GRID: Unconventional layouts — overlapping elements, broken grids, elements that bleed off-screen. Mix rigid grid sections with deliberately "off" placements. Use negative margins, rotate elements slightly (rotate-1, -rotate-2).
-   - TYPOGRAPHY: Extremely bold — text-7xl to text-9xl headlines, font-black (900 weight). Use condensed or mono fonts (Space Grotesk, JetBrains Mono, Space Mono, or Syne). ALL CAPS headlines with tight tracking (tracking-tighter). Mix type sizes dramatically.
-   - HERO: Full-screen typographic hero — giant text filling the viewport, minimal imagery. Or stark image + overlapping bold text. No gradients, no soft effects.
-   - SECTIONS: Hard divisions between sections — thick borders (border-4, border-8), stark color block backgrounds. Sections feel like distinct "posters" stacked together.
-   - CARDS: Sharp corners (rounded-none), thick borders (border-2 border-black), high contrast. Hover effects are stark (background color swap, not subtle shadows). Cards may overlap or be rotated.
-   - COLOR: High contrast — black/white base with 1-2 punchy accent colors (neon green #00FF41, electric blue #0066FF, hot pink #FF0066, acid yellow #CCFF00). No pastels. No soft gradients. Raw flat colors.
-   - SPACING: Deliberately tight in places, vast in others. Break rhythm on purpose. Some elements cramped, some floating in whitespace.
-   - DECORATIVE: Exposed grid lines, visible borders everywhere, underline text decorations, strikethrough text, cursor-style blinking elements, raw HTML aesthetic. Star/asterisk decorators (*). Unicode symbols (→ ↗ ● ■).
-   - EFFECTS: No glassmorphism, no soft shadows. Use hard shadows (shadow-[4px_4px_0px_black]) or no shadows. Borders > shadows. Mix-blend-mode effects.
-
-🅲 MINIMAL LAYOUT STYLE:
+🅲 MINIMAL LAYOUT:
    Ultra-clean, spacious, refined — every element has purpose and breathing room.
    - GRID: Simple, balanced layouts — single column or symmetric 2/3-column grids. Centered content with generous max-width (max-w-5xl or max-w-6xl). Clean alignment.
    - TYPOGRAPHY: Elegant sans-serif (Inter, Outfit, or General Sans) at moderate weights (400-600). Headlines text-4xl to text-6xl, never font-black — use font-semibold or font-bold max. Subtle, refined, not shouty. Consider one accent font for headlines (Instrument Serif or Fraunces).
@@ -114,15 +114,54 @@ You MUST randomly pick ONE of these 3 premium layout styles for EVERY text-only 
    - DECORATIVE: Almost none. Small icons (Lucide at 16-20px), thin subtle lines, tiny muted labels. No blobs, no gradients, no patterns. Let the content and whitespace do the talking.
    - EFFECTS: Minimal — subtle fade-in on scroll, gentle hover states. No flashy animations. No glassmorphism. Everything whispers, nothing shouts.
 
-STYLE SELECTION RULES (TEXT PROMPT / PRD ONLY):
-- If user submits a text prompt or PRD with NO image and NO template → RANDOMLY pick 🅰, 🅱, or 🅲 for ANY project type (website, mobile app, dashboard, web app, landing page, etc.). Alternate each time.
-- If user says "modern", "clean", "professional", "minimal" → Use 🅲 Minimal
-- If user says "bold", "raw", "brutalist", "neobrutalist" → Use 🅱 Brutalist
-- If user says "editorial", "magazine", "elegant", "luxury" → Use 🅰 Editorial
-- If user uploads a REFERENCE IMAGE → DO NOT use any of these 3 styles. Match the image design exactly (colors, layout, spacing, typography).
-- If user selects a TEMPLATE → DO NOT use any of these 3 styles. Follow the template DNA exactly.
+🅳 3D / GLASSMORPHISM LAYOUT:
+   Depth-rich, immersive, futuristic — layered glass panels with 3D perspective and depth effects.
+   - GRID: Layered layouts with overlapping panels. Cards and sections at different visual z-depths. Use CSS perspective and transform: translateZ() for real depth. Stacked floating panels with varying opacity.
+   - TYPOGRAPHY: Clean geometric sans-serif (Space Grotesk, Sora, or Urbanist). Headlines text-5xl to text-7xl at font-bold. Use text-white or text-white/90 on dark/gradient backgrounds. Subtle text-shadow for depth.
+   - HERO: Full-screen gradient mesh background (dark purple/blue/teal) with floating glassmorphic panels. 3D-tilted UI mockup or dashboard screenshot. Glowing accent orbs behind glass. Animated gradient mesh or aurora effect.
+   - SECTIONS: Each section has depth — glass cards floating above colored backgrounds. Use backdrop-blur-xl bg-white/10 border border-white/20 for glass panels. Dark or gradient section backgrounds with bright glass content on top.
+   - CARDS: Glassmorphic — backdrop-blur-xl bg-white/10 (dark mode) or bg-white/70 (light mode). Border border-white/20. Rounded-2xl to rounded-3xl. Subtle inner glow. Hover: slight scale(1.02) + increased backdrop-blur.
+   - COLOR: Rich gradients — purple-to-blue, teal-to-cyan, indigo-to-violet. Dark backgrounds (#0F0B1E, #1A1033, #0C1222) with vibrant accent glows. Neon-like accent colors at low opacity for ambient lighting.
+   - SPACING: Generous — py-24 to py-36. Cards need extra padding (p-8 to p-10) to feel like floating panels.
+   - DECORATIVE: Glowing gradient orbs (absolute positioned, blur-3xl, opacity-30), mesh gradient backgrounds, floating particles, concentric rings, dot grid patterns at low opacity.
+   - EFFECTS: CSS 3D transforms (perspective: 1000px, rotateX, rotateY), hover tilt effects, parallax layers with different scroll speeds, glassmorphic blur transitions, glowing borders on hover (box-shadow with color).
 
-2. COLOR PALETTE BY INDUSTRY (applies to ALL 3 layout styles):
+🅴 PARALLAX / ANIMATED LAYOUT:
+   Dynamic, scroll-driven, cinematic — the page tells a story as you scroll with smooth parallax and reveal animations.
+   - GRID: Full-width immersive sections that transform on scroll. Each section is a "scene" — full viewport height (min-h-screen) with content centered. Mix full-bleed images with overlaid text sections.
+   - TYPOGRAPHY: Dramatic sans-serif (Syne, Cabinet Grotesk, or Clash Display) for headlines at text-6xl to text-8xl. Animate text reveal — letters sliding up, words fading in sequence, or clip-path reveal. Body in Inter or DM Sans.
+   - HERO: Full-screen hero with parallax background image (background-attachment: fixed or transform: translateY with JS). Large centered text that fades/scales on scroll. Scroll indicator arrow at bottom. Cinematic feel — the hero IS the first act.
+   - SECTIONS: Each section triggers animations on enter — slide up, fade in, scale from 0.95. Use IntersectionObserver with staggered delays for child elements. Sections can have sticky elements that pin while content scrolls past.
+   - CARDS: Animate in staggered — first card at delay-0, second at delay-100, third at delay-200. Cards slide up from opacity-0 translate-y-8 to opacity-100 translate-y-0. Hover: 3D tilt or perspective shift.
+   - COLOR: Bold, cinematic palettes — deep blacks with vibrant accents, or rich dark gradients (slate-950 to indigo-950). High contrast between text and backgrounds. Use color transitions between sections (dark → light → dark).
+   - SPACING: Full-screen sections (min-h-screen) with content vertically centered. Large gaps between elements for dramatic pacing.
+   - DECORATIVE: Horizontal scroll galleries, counter animations (numbers counting up on scroll), progress bars tied to scroll, SVG path animations, floating elements with different parallax speeds.
+   - EFFECTS: Parallax scrolling (multiple layers at different speeds), scroll-triggered CSS animations (@keyframes with IntersectionObserver), smooth scroll (scroll-behavior: smooth), sticky positioning for scroll-storytelling, CSS clip-path reveals, transform transitions on scroll. Use vanilla JS for scroll listeners — no external libraries.
+
+🅵 DARK PREMIUM LAYOUT:
+   Sleek, luxurious, high-end — dark backgrounds with refined light accents, perfect for tech and premium brands.
+   - GRID: Clean structured grids on dark backgrounds. Max-w-7xl contained sections. Feature grids with subtle borders separating cards. Bento-style grids mixing large and small cards.
+   - TYPOGRAPHY: Sharp, modern typefaces (Inter, Geist, or SF Pro Display feel via system-ui). Headlines text-5xl to text-7xl in text-white. Body in text-gray-400. Use font-light for large display text, font-semibold for smaller headings. Tracking-tight on headlines.
+   - HERO: Dark gradient background (#09090B, #0A0A0F) with subtle noise texture or grid pattern. Floating glow behind headline. Clean headline + subtle body text + glowing primary CTA. Optional: product screenshot with glowing border.
+   - SECTIONS: Dark base (bg-[#09090B] or bg-gray-950) with subtle section dividers (border-t border-white/5). Alternate between pure dark and slightly lighter dark (bg-gray-900/50) for depth.
+   - CARDS: Dark cards — bg-gray-900/50 or bg-white/5 with border border-white/10. Rounded-xl. Hover: border-white/20 + subtle glow (shadow-lg shadow-primary/5). Icon badges with colored background tints.
+   - COLOR: Dark base (#09090B, #0C0C10) with one signature accent — electric blue (#3B82F6), violet (#8B5CF6), emerald (#10B981), or amber (#F59E0B). Accent used sparingly for CTAs, highlights, and glowing effects. Avoid multiple bright colors — keep it monochromatic with one pop.
+   - SPACING: Generous — py-24 to py-32. Content breathes against dark backgrounds. Cards with p-6 to p-8.
+   - DECORATIVE: Subtle noise/grain texture overlay (opacity-[0.03]), grid dot patterns, glowing gradients behind key elements, thin white/10 borders for structure, small colored indicator dots or lines.
+   - EFFECTS: Subtle glow on hover (box-shadow with accent color at low opacity), smooth fade-in on scroll, gradient shimmer on CTAs, border-glow animations. Dark mode glassmorphism (backdrop-blur + bg-white/5).
+
+STYLE SELECTION RULES (TEXT PROMPT / PRD ONLY):
+- The MANDATORY STYLE directive at the end of this instruction determines which style to use. Follow it strictly.
+- If user says "modern", "clean", "professional" → Use 🅰 Modern Clean
+- If user says "editorial", "magazine", "elegant", "luxury" → Use 🅱 Editorial
+- If user says "minimal", "simple", "airy", "whitespace" → Use 🅲 Minimal
+- If user says "3d", "glass", "glassmorphism", "futuristic", "depth" → Use 🅳 3D / Glassmorphism
+- If user says "animated", "parallax", "scroll", "cinematic", "dynamic" → Use 🅴 Parallax / Animated
+- If user says "dark", "dark mode", "premium", "sleek", "noir" → Use 🅵 Dark Premium
+- If user uploads a REFERENCE IMAGE → DO NOT use any of these styles. Match the image design exactly.
+- If user selects a TEMPLATE → DO NOT use any of these styles. Follow the template DNA exactly.
+
+2. COLOR PALETTE BY INDUSTRY (applies to ALL 6 layout styles):
    Pick a specific, opinionated color palette based on the project context:
    - SaaS/Tech → Deep purples, electric blues, cyan accents
    - E-commerce/Retail → Warm neutrals with a strong CTA color (coral, amber)
@@ -139,9 +178,12 @@ STYLE SELECTION RULES (TEXT PROMPT / PRD ONLY):
    - Body text: text-base to text-lg, muted color, leading-relaxed.
 
 4. VISUAL DEPTH & EFFECTS (adapt to chosen style):
-   - 🅰 Editorial: Subtle shadows, image zoom hovers, elegant overlaps, thin rules
-   - 🅱 Brutalist: Hard shadows, thick borders, color block swaps, no blur effects
+   - 🅰 Modern Clean: Soft shadows, gradient buttons, glassmorphic navbar, smooth hover lifts
+   - 🅱 Editorial: Subtle shadows, image zoom hovers, elegant overlaps, thin rules
    - 🅲 Minimal: Ultra-soft shadows, gentle lifts, barely-there borders, fade-in animations
+   - 🅳 3D / Glassmorphism: Layered glass panels, backdrop-blur, glowing orbs, depth transforms
+   - 🅴 Parallax / Animated: Scroll-triggered reveals, parallax layers, staggered animations, cinematic pacing
+   - 🅵 Dark Premium: Subtle glows, dark glass cards, noise textures, border-glow on hover
    - BACKGROUNDS: Never use plain white. Each style has its own background approach (see style descriptions above).
 
 5. RICH MEDIA & IMAGE STRATEGY:
@@ -157,10 +199,13 @@ STYLE SELECTION RULES (TEXT PROMPT / PRD ONLY):
    - ██ ILLUSTRATION RESTRICTION ██: NEVER use Yuppies illustrations or any illustration assets UNLESS the user explicitly requests them. This applies to ALL output types: websites, templates, banners, posters, landing pages, dashboards, mobile apps — everything. Default to photos (picsum.photos) + icons (Lucide) + CSS decorative elements instead.
 
 6. MICRO-INTERACTIONS & ANIMATIONS (adapt to chosen style):
-   - 🅰 Editorial: Image zoom on hover, smooth scroll, fade-in sections, underline link animations
-   - 🅱 Brutalist: Stark hover effects (bg color swap, border change), no smooth transitions (instant or 100ms), cursor effects
+   - 🅰 Modern Clean: Smooth hover lifts, gradient button transitions, glassmorphic sticky navbar (backdrop-blur-xl bg-white/80), fade-in on scroll
+   - 🅱 Editorial: Image zoom on hover, smooth scroll, fade-in sections, underline link animations, elegant text reveals
    - 🅲 Minimal: Gentle fade-in on scroll (IntersectionObserver), subtle hover lifts, smooth scroll, soft link transitions
-   - Navigation: Sticky header adapted to style — glassmorphic (editorial), solid with thick border (brutalist), or transparent fading in (minimal).
+   - 🅳 3D / Glass: Hover tilt transforms (perspective + rotateX/Y), glass shimmer effects, glowing borders on hover, depth transitions
+   - 🅴 Parallax / Animated: Scroll-triggered animations (IntersectionObserver with staggered delays), parallax background layers, counter animations, clip-path reveals, text slide-up reveals
+   - 🅵 Dark Premium: Subtle glow on hover, border-color transitions, gradient shimmer on CTAs, ambient light animations
+   - Navigation: Sticky header adapted to style — glassmorphic (modern/3d), elegant serif (editorial), transparent fading (minimal), blur-dark (dark premium), hide-on-scroll-down (parallax).
 
 ██ RESUME / CV DESIGN RULES ██
 When the user requests a resume or CV, generate a SINGLE stunning HTML file optimized for both screen viewing and print (Ctrl+P / Cmd+P). Follow these rules strictly:

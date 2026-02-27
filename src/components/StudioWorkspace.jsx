@@ -708,13 +708,16 @@ const StudioWorkspace = () => {
 
     // Inject random layout style for text-only prompts (no image, no template, first generation)
     let styleDirective = '';
-    if (!templateDNA && !hasImageAttachment && !hasCollectionImages && isFirstGeneration) {
+    if (!templateDNA && !hasImageAttachment && isFirstGeneration) {
       const styles = [
-        '\n\n██ MANDATORY STYLE FOR THIS GENERATION: 🅰 EDITORIAL LAYOUT ██\nYou MUST use the 🅰 Editorial layout style for this generation. Magazine-inspired, asymmetric grids, serif headlines, elegant overlaps, warm refined palette. Do NOT use Minimal or Brutalist.',
-        '\n\n██ MANDATORY STYLE FOR THIS GENERATION: 🅱 BRUTALIST LAYOUT ██\nYou MUST use the 🅱 Brutalist layout style for this generation. Raw bold typography, broken grids, thick borders, high contrast, neon accents, hard shadows. Do NOT use Minimal or Editorial.',
-        '\n\n██ MANDATORY STYLE FOR THIS GENERATION: 🅲 MINIMAL LAYOUT ██\nYou MUST use the 🅲 Minimal layout style for this generation. Ultra-clean, spacious, soft shadows, restrained palette, maximum whitespace, gentle animations. Do NOT use Editorial or Brutalist.'
+        '\n\n██ MANDATORY STYLE FOR THIS GENERATION: 🅰 MODERN CLEAN LAYOUT ██\nYou MUST use the 🅰 Modern Clean layout style. Contemporary, polished, professional — clean grids, gradient CTAs, glassmorphic navbar, soft shadows, vibrant primary color. The gold standard for SaaS and business sites.',
+        '\n\n██ MANDATORY STYLE FOR THIS GENERATION: 🅱 EDITORIAL LAYOUT ██\nYou MUST use the 🅱 Editorial layout style. Magazine-inspired, asymmetric grids, oversized serif headlines, elegant overlaps, warm refined cream palette, pull-quotes, editorial tension.',
+        '\n\n██ MANDATORY STYLE FOR THIS GENERATION: 🅲 MINIMAL LAYOUT ██\nYou MUST use the 🅲 Minimal layout style. Ultra-clean, spacious, maximum whitespace, soft shadows, restrained muted palette, gentle fade-in animations. Everything whispers, nothing shouts.',
+        '\n\n██ MANDATORY STYLE FOR THIS GENERATION: 🅳 3D / GLASSMORPHISM LAYOUT ██\nYou MUST use the 🅳 3D / Glassmorphism layout style. Layered glass panels with backdrop-blur, dark gradient mesh backgrounds, glowing accent orbs, CSS 3D transforms, depth-rich immersive design.',
+        '\n\n██ MANDATORY STYLE FOR THIS GENERATION: 🅴 PARALLAX / ANIMATED LAYOUT ██\nYou MUST use the 🅴 Parallax / Animated layout style. Scroll-driven cinematic experience — parallax layers, scroll-triggered reveal animations, staggered fade-ins, full-screen sections, dynamic storytelling.',
+        '\n\n██ MANDATORY STYLE FOR THIS GENERATION: 🅵 DARK PREMIUM LAYOUT ██\nYou MUST use the 🅵 Dark Premium layout style. Sleek dark backgrounds (#09090B), refined light accents, subtle glow effects, noise textures, one signature accent color, dark glassmorphic cards.'
       ];
-      styleDirective = styles[Math.floor(Math.random() * 3)];
+      styleDirective = styles[Math.floor(Math.random() * 6)];
     }
 
     const sysInstruction = (liveSystemInstruction || SYSTEM_INSTRUCTION) + getImageCatalogInstruction() + (templateDNA ? `\n\nSTYLE DNA (MANDATORY):\n${templateDNA}` : '') + styleDirective;
