@@ -796,28 +796,28 @@ const StudioWorkspace = () => {
       // EDIT MODE: Minimal system instruction — just core rules + surgical edit context
       sysInstruction = liveSystemInstruction || SYSTEM_INSTRUCTION;
 
-      // Smart context: send FULL code only for active file, just names for others (saves tokens, prevents quality loss)
+      // Full context: send ALL files so AI knows about every page's content, elements, and structure
       const currentActive = activeFileName || Object.keys(generatedFiles)[0];
-      const otherFiles = Object.keys(generatedFiles).filter(f => f !== currentActive);
-      let filesContext = `[ACTIVE FILE: ${currentActive}]\n${generatedFiles[currentActive] || ''}`;
-      if (otherFiles.length > 0) {
-        filesContext += `\n\nOther files in workspace (not shown): ${otherFiles.join(', ')}`;
-      }
+      const allFileEntries = Object.entries(generatedFiles);
+      let filesContext = allFileEntries.map(([name, html]) => {
+        const label = name === currentActive ? `[ACTIVE FILE: ${name}] ← User is viewing this file` : `[FILE: ${name}]`;
+        return `${label}\n${html}`;
+      }).join('\n\n' + '='.repeat(60) + '\n\n');
 
       const componentConvertRule = isComponentRef ? `\n7. The user provided a React/TSX component. Convert it to plain HTML + CSS animations + minimal vanilla JS and integrate into the page. Keep Tailwind classes. Convert: React hooks→vanilla JS, framer-motion→CSS @keyframes/transitions, shadcn→styled HTML. Do NOT use React, npm, or import statements. All JS must be idempotent (check if already initialized). Prefer CSS-only animations. All content must have a visible initial HTML state.` : '';
 
       fullPrompt = `SURGICAL EDIT REQUEST: "${userPrompt}"
 
-ACTIVE FILE (EDIT THIS):
+ALL PROJECT FILES (${allFileEntries.length} files):
 ${filesContext}
 
 RULES FOR THIS EDIT:
-1. Return ONLY the file(s) that need to change. Usually just the active file above.
+1. Return ONLY the file(s) that need to change — but you may change MULTIPLE files if the request affects them.
 2. Keep 99% of the existing HTML IDENTICAL — only modify what was specifically requested.
 3. Do NOT redesign, restyle, rearrange, or "improve" anything the user did not ask to change.
 4. Do NOT return unchanged files.
 5. Each returned file must be COMPLETE standalone HTML (full file, not a snippet).
-6. If the user's request affects a file not shown above, say which file you need and I will provide it.${componentConvertRule}`;
+6. Keep navigation, shared components (navbar, footer), and cross-page links consistent across all files you modify.${componentConvertRule}`;
 
     } else {
       // FIRST GENERATION: Full system instruction with catalog, style, and collection
