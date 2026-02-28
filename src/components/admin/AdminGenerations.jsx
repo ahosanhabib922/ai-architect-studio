@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Sparkles, FileCode, MessageSquare, Clock, ChevronDown, ChevronUp, Eye, X, Download, FolderDown, Code, Layout, Loader, Smartphone } from 'lucide-react';
+import { Search, Sparkles, FileCode, MessageSquare, Clock, ChevronDown, ChevronUp, Eye, X, Download, FolderDown, Code, Layout, Loader, Smartphone, History } from 'lucide-react';
 import { loadAllGenerations } from '../../utils/firestoreAdmin';
+import { loadVersionSnapshotsAdmin } from '../../utils/firestoreSessions';
 import { loadJSZip } from '../../utils/loadJSZip';
 import { generateAIResponse } from '../../utils/generateAIResponse';
 
@@ -12,6 +13,10 @@ const AdminGenerations = () => {
   const [previewHtml, setPreviewHtml] = useState(null);
   const [exportingReact, setExportingReact] = useState(null); // fileName being converted
   const [exportingFlutter, setExportingFlutter] = useState(null); // fileName being converted
+  const [versionModal, setVersionModal] = useState(null); // { uid, sessionId, sessionTitle }
+  const [versionData, setVersionData] = useState([]); // flat array of version docs
+  const [versionLoading, setVersionLoading] = useState(false);
+  const [versionFilter, setVersionFilter] = useState(''); // filter by fileName
 
   const downloadFile = (fileName, content) => {
     const blob = new Blob([content], { type: 'text/html' });
@@ -144,6 +149,25 @@ const AdminGenerations = () => {
     return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
+  const openVersionHistory = async (uid, sessionId, sessionTitle) => {
+    setVersionModal({ uid, sessionId, sessionTitle });
+    setVersionLoading(true);
+    setVersionFilter('');
+    try {
+      const versions = await loadVersionSnapshotsAdmin(uid, sessionId);
+      setVersionData(versions);
+    } catch (err) {
+      console.error('Load versions failed:', err);
+      setVersionData([]);
+    } finally {
+      setVersionLoading(false);
+    }
+  };
+
+  // Group version data by fileName for filter dropdown
+  const versionFileNames = [...new Set(versionData.map(v => v.fileName))];
+  const filteredVersions = versionFilter ? versionData.filter(v => v.fileName === versionFilter) : versionData;
+
   const filtered = generations.filter(g =>
     g.userName?.toLowerCase().includes(search.toLowerCase()) ||
     g.title?.toLowerCase().includes(search.toLowerCase()) ||
@@ -251,6 +275,14 @@ const AdminGenerations = () => {
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Generated Files</div>
+                          <div className="flex items-center gap-2">
+                          {/* Version history */}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openVersionHistory(g.uid, g.id, g.title); }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 hover:bg-violet-100 text-violet-600 rounded-lg text-[11px] font-semibold transition-colors"
+                          >
+                            <History className="w-3.5 h-3.5" /> Versions
+                          </button>
                           {/* Bulk export */}
                           <button
                             onClick={(e) => { e.stopPropagation(); downloadZip(g.generatedFiles, g.title); }}
@@ -258,6 +290,7 @@ const AdminGenerations = () => {
                           >
                             <FolderDown className="w-3.5 h-3.5" /> Download All ZIP
                           </button>
+                          </div>
                         </div>
                         <div className="space-y-1.5">
                           {Object.entries(g.generatedFiles).map(([fileName, html]) => (
@@ -327,6 +360,87 @@ const AdminGenerations = () => {
               <button onClick={() => setPreviewHtml(null)} className="p-1 hover:bg-slate-100 rounded-lg"><X className="w-4 h-4 text-slate-500" /></button>
             </div>
             <iframe srcDoc={previewHtml.html} className="flex-1 w-full" sandbox="allow-scripts allow-same-origin" title="Preview" />
+          </div>
+        </div>
+      )}
+
+      {/* Version History Modal */}
+      {versionModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setVersionModal(null)}>
+          <div className="bg-white w-[90%] max-w-3xl max-h-[85vh] rounded-2xl flex flex-col overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-slate-800">Version History</h3>
+                <p className="text-[11px] text-slate-400 mt-0.5">{versionModal.sessionTitle} — {versionData.length} version{versionData.length !== 1 ? 's' : ''}</p>
+              </div>
+              <button onClick={() => setVersionModal(null)} className="p-1.5 hover:bg-slate-100 rounded-lg"><X className="w-4 h-4 text-slate-500" /></button>
+            </div>
+
+            {/* Filter by file */}
+            {versionFileNames.length > 1 && (
+              <div className="px-5 py-3 border-b border-slate-100 flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={() => setVersionFilter('')}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${!versionFilter ? 'bg-[#A78BFA] text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                >All files</button>
+                {versionFileNames.map(f => (
+                  <button
+                    key={f}
+                    onClick={() => setVersionFilter(f)}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${versionFilter === f ? 'bg-[#A78BFA] text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                  >{f}</button>
+                ))}
+              </div>
+            )}
+
+            {/* Version list */}
+            <div className="flex-1 overflow-y-auto">
+              {versionLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <div className="w-6 h-6 border-2 border-[#A78BFA] border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : filteredVersions.length === 0 ? (
+                <div className="text-center py-16 text-slate-400 text-sm">No versions found</div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {[...filteredVersions].reverse().map((v, i) => {
+                    const time = new Date(v.timestamp);
+                    const timeStr = time.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    return (
+                      <div key={v.id || i} className="px-5 py-3 hover:bg-slate-50 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-7 h-7 rounded-lg bg-violet-50 flex items-center justify-center shrink-0">
+                              <FileCode className="w-3.5 h-3.5 text-[#A78BFA]" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-xs font-medium text-slate-800 truncate">{v.fileName}</div>
+                              <div className="text-[10px] text-slate-400 truncate">{v.label}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0 ml-3">
+                            <span className="text-[10px] text-slate-400">{timeStr}</span>
+                            <button
+                              onClick={() => setPreviewHtml({ title: `${v.fileName} — ${v.label}`, html: v.code })}
+                              className="p-1.5 text-slate-400 hover:text-[#A78BFA] hover:bg-[#A78BFA]/10 rounded-md transition-colors" title="Preview"
+                            ><Eye className="w-3.5 h-3.5" /></button>
+                            <button
+                              onClick={() => downloadFile(v.fileName, v.code)}
+                              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors" title="Download"
+                            ><Download className="w-3.5 h-3.5" /></button>
+                            <button
+                              onClick={() => navigator.clipboard.writeText(v.code)}
+                              className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors" title="Copy HTML"
+                            ><Code className="w-3.5 h-3.5" /></button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

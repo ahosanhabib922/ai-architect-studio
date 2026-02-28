@@ -24,7 +24,7 @@ import { getInjectionScript } from '../utils/injectionScript';
 import { replaceImagesInFiles } from '../utils/replaceImages';
 import { GOOGLE_FONTS } from '../config/fonts';
 import { useAuth } from '../contexts/AuthContext';
-import { loadSessionsFromFirestore, saveSessionToFirestore, deleteSessionFromFirestore } from '../utils/firestoreSessions';
+import { loadSessionsFromFirestore, saveSessionToFirestore, deleteSessionFromFirestore, saveVersionSnapshots, loadVersionSnapshots } from '../utils/firestoreSessions';
 import { trackTokenUsage, getUserTokenInfo } from '../utils/tokenTracker';
 import PlanSelector from './PlanSelector';
 import Accordion from './ui/Accordion';
@@ -73,6 +73,13 @@ const StudioWorkspace = () => {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const isUndoingRef = useRef(false);
   const historyTimeoutRef = useRef(null);
+
+  // Version Snapshots — per-file, saved after each AI generation
+  // Shape: { [fileName]: [{ code, label, timestamp }] } — up to 20 per file
+  const [versionSnapshots, setVersionSnapshots] = useState({});
+  const [showVersionPanel, setShowVersionPanel] = useState(false);
+  const versionSnapshotsRef = useRef({});
+  useEffect(() => { versionSnapshotsRef.current = versionSnapshots; }, [versionSnapshots]);
 
   // Refs that always hold the latest state (for reliable Firestore sync)
   const messagesRef = useRef(messages);
@@ -133,6 +140,13 @@ const StudioWorkspace = () => {
   const [hostedQuery, setHostedQuery] = useState('');
   const [hostedResults, setHostedResults] = useState([]);
   const [hostedCategory, setHostedCategory] = useState('');
+  const [nestedImgPicker, setNestedImgPicker] = useState(null); // index of expanded nested image picker
+  const [nestedUnsplashQuery, setNestedUnsplashQuery] = useState('');
+  const [nestedUnsplashResults, setNestedUnsplashResults] = useState([]);
+  const [nestedUnsplashLoading, setNestedUnsplashLoading] = useState(false);
+  const [nestedHostedQuery, setNestedHostedQuery] = useState('');
+  const [nestedHostedResults, setNestedHostedResults] = useState([]);
+  const [nestedHostedCategory, setNestedHostedCategory] = useState('');
 
   const iframeRef = useRef(null);
   const endOfChatRef = useRef(null);
@@ -169,7 +183,7 @@ const StudioWorkspace = () => {
   // --- Load all sessions from Firestore on mount ---
   useEffect(() => {
     if (!user) return;
-    loadSessionsFromFirestore(user.uid).then(sessions => {
+    loadSessionsFromFirestore(user.uid).then(async (sessions) => {
       setChatSessions(sessions);
       if (chatId && sessions[chatId]) {
         const target = sessions[chatId];
@@ -179,6 +193,11 @@ const StudioWorkspace = () => {
         activeFileNameRef.current = target.activeFileName || '';
         setHistory(target.history || []);
         setHistoryIndex(target.historyIndex ?? -1);
+        // Load versions from subcollection
+        try {
+          const versions = await loadVersionSnapshots(user.uid, chatId);
+          setVersionSnapshots(versions);
+        } catch { setVersionSnapshots({}); }
       }
       // No chatId = fresh new chat, just keep default state (no Firestore save yet)
       setSessionsLoaded(true);
@@ -210,8 +229,9 @@ const StudioWorkspace = () => {
         return { ...m, attachments: m.attachments.map(({ data, content, ...rest }) => rest) };
       });
       const updatedSession = { ...prev[sessionId], messages: latestMessages, generatedFiles: latestFiles, activeFileName: latestFileName, history: latestHistory, historyIndex: latestHistoryIndex, title: newTitle };
-      // Persist to Firestore with cleaned messages
-      saveSessionToFirestore(uid, sessionId, { ...updatedSession, messages: cleanMessages });
+      // Persist to Firestore — skip history (ephemeral) & versionSnapshots (separate subcollection)
+      const { history: _h, historyIndex: _hi, versionSnapshots: _v, ...persistSession } = updatedSession;
+      saveSessionToFirestore(uid, sessionId, { ...persistSession, messages: cleanMessages });
       return { ...prev, [sessionId]: updatedSession };
     });
   }, [user]);
@@ -222,7 +242,7 @@ const StudioWorkspace = () => {
     clearTimeout(sessionSyncTimerRef.current);
     sessionSyncTimerRef.current = setTimeout(() => flushSessionToFirestore(activeSessionId), 500);
     return () => clearTimeout(sessionSyncTimerRef.current);
-  }, [messages, generatedFiles, activeFileName, history, historyIndex, activeSessionId, user, sessionsLoaded, flushSessionToFirestore]);
+  }, [messages, generatedFiles, activeFileName, activeSessionId, user, sessionsLoaded, flushSessionToFirestore]);
 
   // Flush pending saves before page unload (prevents data loss on reload)
   useEffect(() => {
@@ -257,6 +277,7 @@ const StudioWorkspace = () => {
       activeFileNameRef.current = '';
       setHistory([]);
       setHistoryIndex(-1);
+      setVersionSnapshots({});
       return;
     }
     if (chatId !== activeSessionId) {
@@ -269,6 +290,8 @@ const StudioWorkspace = () => {
         activeFileNameRef.current = target.activeFileName || '';
         setHistory(target.history || []);
         setHistoryIndex(target.historyIndex ?? -1);
+        // Load versions from Firestore subcollection
+        loadVersionSnapshots(user.uid, chatId).then(v => setVersionSnapshots(v)).catch(() => setVersionSnapshots({}));
       } else {
         const newSession = createEmptySession(chatId);
         setChatSessions(prev => ({ ...prev, [chatId]: newSession }));
@@ -279,6 +302,7 @@ const StudioWorkspace = () => {
         activeFileNameRef.current = '';
         setHistory(newSession.history);
         setHistoryIndex(newSession.historyIndex);
+        setVersionSnapshots({});
         saveSessionToFirestore(user.uid, chatId, newSession);
       }
     }
@@ -295,6 +319,8 @@ const StudioWorkspace = () => {
     activeFileNameRef.current = target.activeFileName || '';
     setHistory(target.history || []);
     setHistoryIndex(target.historyIndex ?? -1);
+    // Load versions from Firestore subcollection
+    if (user) loadVersionSnapshots(user.uid, id).then(v => setVersionSnapshots(v)).catch(() => setVersionSnapshots({}));
     setIsSidebarOpen(false);
     closeFloatingEditor();
   };
@@ -308,6 +334,7 @@ const StudioWorkspace = () => {
     activeFileNameRef.current = '';
     setHistory([]);
     setHistoryIndex(-1);
+    setVersionSnapshots({});
     setIsSidebarOpen(false);
     closeFloatingEditor();
     navigate('/studio');
@@ -347,7 +374,7 @@ const StudioWorkspace = () => {
         const newStateStr = JSON.stringify(generatedFiles);
         if (latestStateStr === newStateStr) return prev;
 
-        const nextH = [...currentH, generatedFiles].slice(-50);
+        const nextH = [...currentH, generatedFiles].slice(-20);
         setHistoryIndex(nextH.length - 1);
         return nextH;
       });
@@ -390,6 +417,14 @@ const StudioWorkspace = () => {
     });
   }, [history, activeFileName]);
 
+  const handleRestoreVersion = useCallback((index) => {
+    const fileVersions = versionSnapshots[activeFileName];
+    if (!fileVersions || !fileVersions[index]) return;
+    isUndoingRef.current = true;
+    setGeneratedFiles(prev => ({ ...prev, [activeFileName]: fileVersions[index].code }));
+    setShowVersionPanel(false);
+  }, [versionSnapshots, activeFileName]);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -426,6 +461,12 @@ const StudioWorkspace = () => {
         setManualStyles(event.data.styles || {});
         setEditorTab('manual');
         setShowElementMenu(false);
+        setNestedImgPicker(null);
+        setNestedUnsplashQuery('');
+        setNestedUnsplashResults([]);
+        setNestedHostedQuery('');
+        setNestedHostedResults([]);
+        setNestedHostedCategory('');
       }
       if (event.data?.type === 'DOCUMENT_UPDATED') {
         let html = event.data.html;
@@ -436,6 +477,8 @@ const StudioWorkspace = () => {
         html = html.replace(/\bai-architect-highlight\b\s*/g, '');
         // Clean up leftover empty class attributes
         html = html.replace(/\s*class="\s*"/g, '');
+        // Remove data-ai-id attributes (design mode artifacts)
+        html = html.replace(/\s*data-ai-id="[^"]*"/g, '');
         // Skip iframe rewrite — the iframe DOM already has this change
         skipNextIframeWriteRef.current = true;
         setGeneratedFiles(prev => ({ ...prev, [activeFileNameRef.current]: html }));
@@ -500,16 +543,47 @@ const StudioWorkspace = () => {
   const handleElementAction = (action) => {
     setShowElementMenu(false);
     if (!selectedElement) return;
-    if (action === 'move-up') sendToIframe({ type: 'ACTION_MOVE', id: selectedElement.id, direction: 'up' });
-    else if (action === 'move-down') sendToIframe({ type: 'ACTION_MOVE', id: selectedElement.id, direction: 'down' });
-    else if (action === 'delete') { sendToIframe({ type: 'ACTION_DELETE', id: selectedElement.id }); setSelectedElement(null); }
-    else if (action === 'duplicate') sendToIframe({ type: 'ACTION_DUPLICATE', id: selectedElement.id });
+    const tag = selectedElement.tagName || 'element';
+    if (action === 'move-up') { sendToIframe({ type: 'ACTION_MOVE', id: selectedElement.id, direction: 'up' }); logActivity(`Moved <${tag}> up`); }
+    else if (action === 'move-down') { sendToIframe({ type: 'ACTION_MOVE', id: selectedElement.id, direction: 'down' }); logActivity(`Moved <${tag}> down`); }
+    else if (action === 'delete') { sendToIframe({ type: 'ACTION_DELETE', id: selectedElement.id }); setSelectedElement(null); logActivity(`Deleted <${tag}> element`); }
+    else if (action === 'duplicate') { sendToIframe({ type: 'ACTION_DUPLICATE', id: selectedElement.id }); logActivity(`Duplicated <${tag}> element`); }
     else if (action === 'select-parent') sendToIframe({ type: 'ACTION_SELECT_PARENT', id: selectedElement.id });
   };
+
+  // --- Activity Logger (logs edits to conversation panel) ---
+  const activityTimerRef = useRef(null);
+  const logActivity = useCallback((content) => {
+    setMessages(prev => [...prev, { role: 'system', type: 'activity', content, timestamp: Date.now() }]);
+  }, []);
+  const logActivityDebounced = useCallback((content) => {
+    clearTimeout(activityTimerRef.current);
+    activityTimerRef.current = setTimeout(() => logActivity(content), 1500);
+  }, [logActivity]);
 
   const sendToIframe = useCallback((payload) => {
     if (iframeRef.current?.contentWindow) iframeRef.current.contentWindow.postMessage(payload, '*');
   }, []);
+
+  // Nested image helpers
+  const updateNestedImage = useCallback((nIdx, src) => {
+    const nImg = selectedElement?.nestedImages?.[nIdx];
+    if (!nImg) return;
+    sendToIframe({ type: 'UPDATE_NESTED_IMAGE', imgId: nImg.id, src });
+    setSelectedElement(prev => prev ? { ...prev, nestedImages: prev.nestedImages.map((ni, i) => i === nIdx ? { ...ni, src } : ni) } : prev);
+    logActivityDebounced('Changed nested image');
+  }, [selectedElement, sendToIframe, logActivityDebounced]);
+
+  const handleNestedUnsplashSearch = async (q) => {
+    if (!q.trim() || !unsplashKey) return;
+    setNestedUnsplashLoading(true);
+    try {
+      const res = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(q)}&per_page=12&client_id=${unsplashKey}`);
+      const data = await res.json();
+      setNestedUnsplashResults(data.results || []);
+    } catch { setNestedUnsplashResults([]); }
+    finally { setNestedUnsplashLoading(false); }
+  };
 
   const injectFontIntoIframe = useCallback((fontName) => {
     try {
@@ -557,6 +631,11 @@ const StudioWorkspace = () => {
       if (field === 'alt') payload.alt = value;
       sendToIframe(payload);
     }, 300);
+
+    // Log to conversation (debounced)
+    const tag = selectedElement?.tagName || 'element';
+    const labels = { class: 'classes', id: 'ID', html: 'HTML', text: 'text', src: 'image source', alt: 'alt text' };
+    logActivityDebounced(`Edited ${labels[field] || field} on <${tag}>`);
   };
 
   const handleStyleChange = (property, value) => {
@@ -565,12 +644,16 @@ const StudioWorkspace = () => {
     manualChangeTimerRef.current = setTimeout(() => {
       sendToIframe({ type: 'UPDATE_ELEMENT_STYLE', id: selectedElement?.id, property, value });
     }, 200);
+    const tag = selectedElement?.tagName || 'element';
+    logActivityDebounced(`Changed ${property} on <${tag}>`);
   };
 
   const handleElementAIEdit = async () => {
     if (!elementPrompt.trim() || isEditingElement) return;
     if (isTokenLimitReached) { alert('Token limit reached. Contact admin to reset.'); return; }
+    const editDesc = elementPrompt;
     setIsEditingElement(true);
+    const tag = selectedElement?.tagName || 'element';
     const prompt = `You are an expert HTML/Tailwind CSS editor. Edit the following HTML element based on this instruction: "${elementPrompt}". CURRENT ELEMENT HTML: ${selectedElement.outerHTML} RULES: Return ONLY the modified HTML for this specific element. Keep the exact same 'data-ai-id="${selectedElement.id}"' attribute intact. Do NOT wrap your response in markdown fences.`;
 
     try {
@@ -579,8 +662,9 @@ const StudioWorkspace = () => {
       let cleanHTML = text.replace(/^```html\n?/, '').replace(/\n?```$/, '').trim();
       sendToIframe({ type: 'UPDATE_ELEMENT', id: selectedElement.id, newHtml: cleanHTML });
       setElementPrompt('');
+      logActivity(`AI edited <${tag}>: "${editDesc}"`);
     } catch (e) {
-      setMessages(prev => [...prev, { role: 'model', type: 'error', content: "Failed to edit element: " + e.message }]);
+      setMessages(prev => [...prev, { role: 'model', type: 'error', content: "Failed to edit element: " + e.message, timestamp: Date.now() }]);
     } finally {
       setIsEditingElement(false);
     }
@@ -649,7 +733,8 @@ const StudioWorkspace = () => {
     if (isTokenLimitReached) {
       setMessages(prev => [...prev, {
         role: 'model', type: 'error',
-        content: 'You have reached your token usage limit. Please upgrade your plan to continue.'
+        content: 'You have reached your token usage limit. Please upgrade your plan to continue.',
+        timestamp: Date.now()
       }]);
       return;
     }
@@ -681,7 +766,8 @@ const StudioWorkspace = () => {
       type: 'text',
       content: userPrompt,
       attachments: currentAttachments.map(a => ({ name: a.name, type: a.type, isText: a.isText, data: a.data, content: a.content })),
-      template: selectedTemplate ? { name: selectedTemplate.name, color: selectedTemplate.color } : null
+      template: selectedTemplate ? { name: selectedTemplate.name, color: selectedTemplate.color } : null,
+      timestamp: Date.now()
     }]);
     setSelectedTemplateId(null); // Hide chip after send, DNA persists
     setIsGenerating(true);
@@ -702,28 +788,42 @@ const StudioWorkspace = () => {
     let fullPrompt = userPrompt;
     let sysInstruction;
 
+    // Detect React/TSX component prompt (21st.dev style)
+    const isComponentRef = /export\s+(default\s+)?function\s+\w+|['"]use client['"]|import\s+.*from\s+['"]@\/|\.tsx\b/.test(userPrompt)
+      && /```(tsx|jsx|typescript)/.test(userPrompt);
+
     if (isSurgicalEdit) {
       // EDIT MODE: Minimal system instruction — just core rules + surgical edit context
       sysInstruction = liveSystemInstruction || SYSTEM_INSTRUCTION;
 
-      let filesContext = Object.entries(generatedFiles).map(([name, code]) => `[FILE: ${name}]\n${code}`).join('\n\n');
+      // Smart context: send FULL code only for active file, just names for others (saves tokens, prevents quality loss)
+      const currentActive = activeFileName || Object.keys(generatedFiles)[0];
+      const otherFiles = Object.keys(generatedFiles).filter(f => f !== currentActive);
+      let filesContext = `[ACTIVE FILE: ${currentActive}]\n${generatedFiles[currentActive] || ''}`;
+      if (otherFiles.length > 0) {
+        filesContext += `\n\nOther files in workspace (not shown): ${otherFiles.join(', ')}`;
+      }
+
+      const componentConvertRule = isComponentRef ? `\n7. The user provided a React/TSX component. Convert it to plain HTML + CSS animations + minimal vanilla JS and integrate into the page. Keep Tailwind classes. Convert: React hooks→vanilla JS, framer-motion→CSS @keyframes/transitions, shadcn→styled HTML. Do NOT use React, npm, or import statements. All JS must be idempotent (check if already initialized). Prefer CSS-only animations. All content must have a visible initial HTML state.` : '';
+
       fullPrompt = `SURGICAL EDIT REQUEST: "${userPrompt}"
 
-EXISTING WORKSPACE FILES (THESE ARE THE SOURCE OF TRUTH):
+ACTIVE FILE (EDIT THIS):
 ${filesContext}
 
 RULES FOR THIS EDIT:
-1. ONLY return files that need to change based on the request above.
-2. For each returned file, keep 99% of the existing HTML IDENTICAL — only modify what was specifically requested.
+1. Return ONLY the file(s) that need to change. Usually just the active file above.
+2. Keep 99% of the existing HTML IDENTICAL — only modify what was specifically requested.
 3. Do NOT redesign, restyle, rearrange, or "improve" anything the user did not ask to change.
 4. Do NOT return unchanged files.
-5. Each returned file must be COMPLETE standalone HTML (full file, not a snippet).`;
+5. Each returned file must be COMPLETE standalone HTML (full file, not a snippet).
+6. If the user's request affects a file not shown above, say which file you need and I will provide it.${componentConvertRule}`;
 
     } else {
       // FIRST GENERATION: Full system instruction with catalog, style, and collection
 
-      // Auto-fetch collection images (1 image only for speed)
-      if (!hasImageAttachment && !templateDNA) {
+      // Auto-fetch collection images (1 image only for speed) — skip for component references
+      if (!hasImageAttachment && !templateDNA && !isComponentRef) {
         collectionKey = matchCollection(userPrompt);
         if (collectionKey) {
           setGenerationStatus('Loading design inspiration...');
@@ -733,8 +833,8 @@ RULES FOR THIS EDIT:
       allAttachments = [...currentAttachments, ...collectionAttachments];
       const hasCollectionImages = collectionAttachments.length > 0;
 
-      // Random layout style
-      if (!templateDNA && !hasImageAttachment) {
+      // Random layout style — skip for component references (they define their own design)
+      if (!templateDNA && !hasImageAttachment && !isComponentRef) {
         const styles = [
           '\n\n██ MANDATORY STYLE: 🅰 MODERN CLEAN ██\nUse Modern Clean layout. Clean grids, gradient CTAs, glassmorphic navbar, soft shadows, vibrant primary color.',
           '\n\n██ MANDATORY STYLE: 🅱 EDITORIAL ██\nUse Editorial layout. Asymmetric grids, oversized serif headlines, elegant overlaps, warm cream palette.',
@@ -761,10 +861,46 @@ MATCH the provided image EXACTLY: layout, colors, spacing, typography. Do NOT ap
 USER REQUEST: ${userPrompt}`;
       }
 
-      // PRD detection
-      const isPRD = userPrompt.length > 500 || /features?:|requirements?:|user stor|pages?:|screens?:|specification|overview:/i.test(userPrompt);
-      if (isPRD && !hasImageAttachment) {
-        fullPrompt = `██ PRD DETECTED ██\nAnalyze ALL requirements. Build ALL mentioned pages/screens. Extract colors, fonts, branding.\n\n${userPrompt}`;
+      // Component reference detection (21st.dev style — takes priority over PRD, but not image reference)
+      if (isComponentRef && !hasImageAttachment) {
+        // Extract just the code blocks and strip setup/integration instructions
+        const codeBlocks = [];
+        userPrompt.replace(/```(?:tsx|jsx|typescript|css|bash)?\s*\n?([\s\S]*?)```/g, (_, code) => { codeBlocks.push(code.trim()); });
+        const componentCode = codeBlocks.length > 0 ? codeBlocks.join('\n\n---\n\n') : userPrompt;
+
+        fullPrompt = `██ COMPONENT REFERENCE — CONVERT TO HTML ██
+IGNORE ALL setup instructions, npm install commands, project structure advice, shadcn/CLI setup, TypeScript config, and integration guidelines in the user's message. Focus ONLY on the component code itself.
+
+Analyze the React/TSX component code below and recreate it as a beautiful standalone HTML page.
+
+COMPONENT CODE:
+${componentCode}
+
+CONVERSION RULES:
+- React state/hooks → vanilla JS (addEventListener, setInterval, DOM manipulation)
+- framer-motion / motion.div → CSS @keyframes + transitions + CSS animations. Recreate all animation behavior with pure CSS.
+- Tailwind utility classes → keep them (page has Tailwind CDN via <script src="https://cdn.tailwindcss.com">)
+- shadcn/radix/cn() → use Tailwind classes directly
+- TypeScript types → ignore
+- npm dependencies → implement in vanilla JS or CSS
+- import/export/"use client" → ignore
+
+OUTPUT RULES (CRITICAL):
+- You MUST output a complete HTML file using the standard format: FILE: index.html then full <!DOCTYPE html> code
+- Do NOT output explanations, setup instructions, or npm commands
+- Do NOT output React/JSX code
+- Output ONLY the HTML file(s)
+- The HTML must be self-contained with <script src="https://cdn.tailwindcss.com"></script> in <head>
+- Use <style> for custom CSS animations, @keyframes, etc.
+- Include a demo/showcase section (recreate the demo.tsx layout if provided)
+- All JS at end of <body>, wrapped in DOMContentLoaded, idempotent (check before re-init)
+- Prefer CSS-only animations wherever possible (CSS @keyframes for motion, CSS transitions for state changes)`;
+      } else {
+        // PRD detection
+        const isPRD = userPrompt.length > 500 || /features?:|requirements?:|user stor|pages?:|screens?:|specification|overview:/i.test(userPrompt);
+        if (isPRD && !hasImageAttachment) {
+          fullPrompt = `██ PRD DETECTED ██\nAnalyze ALL requirements. Build ALL mentioned pages/screens. Extract colors, fonts, branding.\n\n${userPrompt}`;
+        }
       }
     }
 
@@ -861,14 +997,41 @@ USER REQUEST: ${userPrompt}`;
         return prev;
       });
 
-      // Mark generation complete
+      // Mark generation complete + save version snapshot
       setGeneratingFiles(prev => {
         setMessages(msgs => [...msgs, {
           role: 'model',
           type: 'files-complete',
-          files: prev.length > 0 ? prev : ['index.html']
+          files: prev.length > 0 ? prev : ['index.html'],
+          timestamp: Date.now()
         }]);
         return [];
+      });
+
+      // Save per-file version snapshots (in-memory + Firestore)
+      setGeneratedFiles(currentFiles => {
+        if (Object.keys(currentFiles).length > 0) {
+          const label = isSurgicalEdit ? userPrompt.substring(0, 40) : (isFirstGeneration ? 'Initial generation' : userPrompt.substring(0, 40));
+          const trimLabel = label + (label.length >= 40 ? '...' : '');
+          const ts = Date.now();
+          const newSnapshots = {}; // track what's new for Firestore save
+          setVersionSnapshots(prev => {
+            const next = { ...prev };
+            Object.entries(currentFiles).forEach(([fileName, code]) => {
+              const fileVersions = next[fileName] || [];
+              // Skip if code is identical to last version
+              if (fileVersions.length > 0 && fileVersions[fileVersions.length - 1].code === code) return;
+              next[fileName] = [...fileVersions, { code, label: trimLabel, timestamp: ts }].slice(-20);
+              newSnapshots[fileName] = { code, label: trimLabel, timestamp: ts };
+            });
+            return next;
+          });
+          // Persist new versions to Firestore subcollection
+          if (user && currentSessionId && Object.keys(newSnapshots).length > 0) {
+            saveVersionSnapshots(user.uid, currentSessionId, newSnapshots).catch(() => {});
+          }
+        }
+        return currentFiles;
       });
 
     } catch (error) {
@@ -876,12 +1039,12 @@ USER REQUEST: ${userPrompt}`;
         // User stopped generation — keep partial output, add info message
         setGeneratingFiles(prev => {
           if (prev.length > 0) {
-            setMessages(msgs => [...msgs, { role: 'model', type: 'files-complete', files: prev }]);
+            setMessages(msgs => [...msgs, { role: 'model', type: 'files-complete', files: prev, timestamp: Date.now() }]);
           }
           return [];
         });
       } else {
-        setMessages(prev => [...prev, { role: 'model', type: 'error', content: `Error: ${error.message}. Please try again.` }]);
+        setMessages(prev => [...prev, { role: 'model', type: 'error', content: `Error: ${error.message}. Please try again.`, timestamp: Date.now() }]);
       }
     } finally {
       abortControllerRef.current = null;
@@ -904,7 +1067,8 @@ USER REQUEST: ${userPrompt}`;
     if (!currentHTML && format !== 'zip') return;
 
     if (format === 'html') {
-      const blob = new Blob([currentHTML], { type: 'text/html' });
+      const cleanHTML = currentHTML.replace(/\s*data-ai-id="[^"]*"/g, '');
+      const blob = new Blob([cleanHTML], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -922,8 +1086,9 @@ USER REQUEST: ${userPrompt}`;
         const JSZip = await loadJSZip();
         const zip = new JSZip();
         Object.entries(generatedFiles).forEach(([name, content]) => {
-          // Strip injected script before zipping
+          // Strip injected script + design mode artifacts before zipping
           let clean = content.replace(/<script id="ai-architect-injected">[\s\S]*?<\/script>/, '');
+          clean = clean.replace(/\s*data-ai-id="[^"]*"/g, '');
           zip.file(name, clean);
         });
         const blob = await zip.generateAsync({ type: "blob" });
@@ -936,7 +1101,7 @@ USER REQUEST: ${userPrompt}`;
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       } catch (err) {
-        setMessages(prev => [...prev, { role: 'model', type: 'error', content: `ZIP Export Error: ${err.message}` }]);
+        setMessages(prev => [...prev, { role: 'model', type: 'error', content: `ZIP Export Error: ${err.message}`, timestamp: Date.now() }]);
       } finally {
         setIsExportingReact(false);
       }
@@ -977,7 +1142,7 @@ USER REQUEST: ${userPrompt}`;
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       } catch (error) {
-        setMessages(prev => [...prev, { role: 'model', type: 'error', content: `React Export Error: ${error.message}` }]);
+        setMessages(prev => [...prev, { role: 'model', type: 'error', content: `React Export Error: ${error.message}`, timestamp: Date.now() }]);
       } finally {
         setIsExportingReact(false);
       }
@@ -1026,7 +1191,7 @@ USER REQUEST: ${userPrompt}`;
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       } catch (error) {
-        setMessages(prev => [...prev, { role: 'model', type: 'error', content: `Flutter Export Error: ${error.message}` }]);
+        setMessages(prev => [...prev, { role: 'model', type: 'error', content: `Flutter Export Error: ${error.message}`, timestamp: Date.now() }]);
       } finally {
         setIsExportingFlutter(false);
       }
@@ -1044,14 +1209,19 @@ USER REQUEST: ${userPrompt}`;
     setIsPublishing(true);
     try {
       const title = chatSessions[activeSessionId]?.title || 'Untitled';
-      const result = await publishSite(user.uid, activeSessionId, generatedFiles, title);
+      // Clean design-mode artifacts before publishing
+      const cleanFiles = {};
+      Object.entries(generatedFiles).forEach(([name, content]) => {
+        cleanFiles[name] = content.replace(/\s*data-ai-id="[^"]*"/g, '');
+      });
+      const result = await publishSite(user.uid, activeSessionId, cleanFiles, title);
       setPublishInfo(result);
       setShowPublishToast(true);
       navigator.clipboard.writeText(result.url).catch(() => { });
       setTimeout(() => setShowPublishToast(false), 4000);
     } catch (e) {
       console.error('Publish failed:', e);
-      setMessages(prev => [...prev, { role: 'model', type: 'error', content: `Publish failed: ${e.message}` }]);
+      setMessages(prev => [...prev, { role: 'model', type: 'error', content: `Publish failed: ${e.message}`, timestamp: Date.now() }]);
     }
     setIsPublishing(false);
     setShowExportMenu(false);
@@ -1167,6 +1337,7 @@ USER REQUEST: ${userPrompt}`;
         codeEditTimerRef.current = null;
         if (codeEditValue !== null) {
           setGeneratedFiles(prev => ({ ...prev, [activeFileName]: codeEditValue }));
+          logActivity(`Manually edited code in ${activeFileName}`);
         }
       }
       setCodeEditValue(null);
@@ -1293,7 +1464,24 @@ USER REQUEST: ${userPrompt}`;
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50 custom-scrollbar">
-            {messages.map((msg, idx) => (
+            {messages.map((msg, idx) => {
+              const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+              // Activity logs — compact inline style, not a bubble
+              if (msg.type === 'activity') {
+                return (
+                  <div key={idx} className="flex items-center gap-2 px-2 py-1">
+                    <div className="flex-1 h-px bg-slate-200" />
+                    <span className="text-[10px] text-slate-400 flex items-center gap-1.5 shrink-0">
+                      <Edit2 className="w-2.5 h-2.5" /> {msg.content}
+                      {timeStr && <span className="text-slate-300 ml-1">{timeStr}</span>}
+                    </span>
+                    <div className="flex-1 h-px bg-slate-200" />
+                  </div>
+                );
+              }
+
+              return (
               <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm whitespace-pre-wrap ${msg.role === 'user' ? 'bg-[#A78BFA] text-white rounded-br-none' : msg.type === 'error' ? 'bg-red-50 border border-red-100 text-red-700 rounded-bl-none' : 'bg-white border border-slate-100 text-slate-700 rounded-bl-none'}`}>
                   {msg.type === 'status' ? (
@@ -1337,9 +1525,11 @@ USER REQUEST: ${userPrompt}`;
                       )}
                     </div>
                   )}
+                  {timeStr && <div className={`text-[10px] mt-1.5 ${msg.role === 'user' ? 'text-white/50 text-right' : 'text-slate-300'}`}>{timeStr}</div>}
                 </div>
               </div>
-            ))}
+              );
+            })}
 
             {/* Live Progress To-Do List Tracker */}
             {isGenerating && (
@@ -1555,6 +1745,54 @@ USER REQUEST: ${userPrompt}`;
                 title="Redo (Ctrl+Y)"
               ><Redo className="w-4 h-4" /></button>
             </div>
+
+            {/* Version History (per-file) */}
+            {(() => {
+              const fileVersions = versionSnapshots[activeFileName] || [];
+              return fileVersions.length > 1 && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowVersionPanel(!showVersionPanel)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${showVersionPanel ? 'bg-[#A78BFA] text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200'}`}
+                    title={`Version History — ${activeFileName}`}
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>v{fileVersions.length}</span>
+                  </button>
+                  {showVersionPanel && (
+                    <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden">
+                      <div className="px-3 py-2.5 border-b border-slate-100 flex items-center justify-between">
+                        <span className="text-xs font-semibold text-slate-700 truncate max-w-[200px]">{activeFileName}</span>
+                        <button onClick={() => setShowVersionPanel(false)} className="text-slate-400 hover:text-slate-600"><X className="w-3.5 h-3.5" /></button>
+                      </div>
+                      <div className="max-h-64 overflow-y-auto custom-scrollbar">
+                        {[...fileVersions].reverse().map((snap, revIdx) => {
+                          const idx = fileVersions.length - 1 - revIdx;
+                          const isLatest = idx === fileVersions.length - 1;
+                          const time = new Date(snap.timestamp);
+                          const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                          return (
+                            <button
+                              key={snap.timestamp}
+                              onClick={() => handleRestoreVersion(idx)}
+                              className={`w-full text-left px-3 py-2.5 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 ${isLatest ? 'bg-violet-50/50' : ''}`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-medium text-slate-800 truncate max-w-[180px]">
+                                  {isLatest && <span className="text-[#A78BFA] mr-1">●</span>}
+                                  v{idx + 1} — {snap.label}
+                                </span>
+                                <span className="text-[10px] text-slate-400 ml-2 shrink-0">{timeStr}</span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Mode Toggle (Preview vs Design vs Code) */}
@@ -1816,6 +2054,87 @@ USER REQUEST: ${userPrompt}`;
                               <label className="block text-[10px] text-zinc-500 mb-1">Inner HTML</label>
                               <textarea value={manualHtml} onChange={(e) => handleManualChange('html', e.target.value)} placeholder="<span>HTML markup...</span>" className="w-full bg-[#1c1c1c] border border-[#2e2e2e] rounded text-green-300 text-xs p-2 h-20 resize-none outline-none focus:border-[#A78BFA] font-mono custom-scrollbar" spellCheck={false} />
                             </div>
+                            {/* Nested images inside selected element */}
+                            {selectedElement?.nestedImages?.length > 0 && (
+                              <div className="pt-2 border-t border-[#2e2e2e]">
+                                <label className="block text-[10px] text-zinc-500 mb-2 flex items-center gap-1"><ImageIcon className="w-3 h-3" /> Nested Images ({selectedElement.nestedImages.length})</label>
+                                <div className="space-y-2 max-h-[400px] overflow-y-auto custom-scrollbar">
+                                  {selectedElement.nestedImages.map((nImg, nIdx) => {
+                                    const isOpen = nestedImgPicker === nIdx;
+                                    return (
+                                    <div key={nImg.id} className="bg-[#1c1c1c] border border-[#2e2e2e] rounded-lg overflow-hidden">
+                                      {/* Header — thumbnail + URL + expand toggle */}
+                                      <div className="p-2 space-y-1.5">
+                                        <div className="flex items-center gap-2">
+                                          <img src={nImg.src} alt={nImg.alt} className="w-10 h-10 object-cover rounded border border-zinc-700 shrink-0 bg-zinc-900" onError={(e) => { e.target.style.display = 'none'; }} />
+                                          <span className="text-[10px] text-zinc-400 truncate flex-1">Image {nIdx + 1}</span>
+                                          <button onClick={() => { if (isOpen) { setNestedImgPicker(null); } else { setNestedImgPicker(nIdx); setNestedUnsplashQuery(''); setNestedUnsplashResults([]); setNestedHostedQuery(''); setNestedHostedResults([]); setNestedHostedCategory(''); } }} className={`p-1 rounded transition-colors ${isOpen ? 'bg-[#A78BFA]/20 text-[#A78BFA]' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`} title="Browse images">
+                                            <Search className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                        <input
+                                          key={nImg.src}
+                                          defaultValue={nImg.src}
+                                          onBlur={(e) => { if (e.target.value !== nImg.src) updateNestedImage(nIdx, e.target.value); }}
+                                          onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+                                          placeholder="Image URL..."
+                                          className="w-full bg-[#141414] border border-[#2e2e2e] rounded text-white text-[11px] px-2 py-1 outline-none focus:border-[#A78BFA] font-mono"
+                                        />
+                                      </div>
+                                      {/* Expanded picker — Unsplash + Hosted */}
+                                      {isOpen && (
+                                        <div className="border-t border-[#2e2e2e] p-2 space-y-2 bg-[#141414]">
+                                          {/* Unsplash */}
+                                          <div>
+                                            <label className="block text-[10px] text-zinc-500 mb-1">Unsplash</label>
+                                            <div className="flex gap-1.5">
+                                              <input value={nestedUnsplashQuery} onChange={(e) => setNestedUnsplashQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleNestedUnsplashSearch(nestedUnsplashQuery); }} placeholder="Search photos..." className="flex-1 bg-[#1c1c1c] border border-[#2e2e2e] rounded text-white text-[11px] px-2 py-1 outline-none focus:border-[#A78BFA]" />
+                                              <button onClick={() => handleNestedUnsplashSearch(nestedUnsplashQuery)} disabled={nestedUnsplashLoading || !nestedUnsplashQuery.trim()} className="p-1 bg-[#A78BFA] hover:bg-[#9061F9] text-white rounded disabled:opacity-50 transition-colors shrink-0">
+                                                {nestedUnsplashLoading ? <div className="w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <Search className="w-3 h-3" />}
+                                              </button>
+                                            </div>
+                                            {nestedUnsplashResults.length > 0 && (
+                                              <div className="grid grid-cols-3 gap-1 mt-1.5 max-h-[120px] overflow-y-auto custom-scrollbar">
+                                                {nestedUnsplashResults.map(photo => (
+                                                  <button key={photo.id} onClick={() => { updateNestedImage(nIdx, photo.urls.regular); setNestedImgPicker(null); }} className="relative group rounded overflow-hidden aspect-square border border-[#2e2e2e] hover:border-[#A78BFA] transition-colors">
+                                                    <img src={photo.urls.thumb} alt={photo.alt_description || ''} className="w-full h-full object-cover" />
+                                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                                                      <Check className="w-3 h-3 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    </div>
+                                                  </button>
+                                                ))}
+                                              </div>
+                                            )}
+                                          </div>
+                                          {/* Hosted */}
+                                          <div>
+                                            <label className="block text-[10px] text-zinc-500 mb-1">Hosted Images</label>
+                                            <div className="flex gap-1.5 mb-1.5">
+                                              <input value={nestedHostedQuery} onChange={(e) => { setNestedHostedQuery(e.target.value); setNestedHostedResults(searchHostedImages(e.target.value)); }} placeholder="Search by tag..." className="flex-1 bg-[#1c1c1c] border border-[#2e2e2e] rounded text-white text-[11px] px-2 py-1 outline-none focus:border-[#A78BFA]" />
+                                              <select value={nestedHostedCategory} onChange={(e) => { setNestedHostedCategory(e.target.value); setNestedHostedResults(e.target.value ? searchHostedImages(e.target.value) : searchHostedImages(nestedHostedQuery)); }} className="bg-[#1c1c1c] border border-[#2e2e2e] rounded text-zinc-300 text-[10px] px-1 outline-none focus:border-[#A78BFA] shrink-0">
+                                                <option value="">All</option>
+                                                {getCategories().map(cat => <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>)}
+                                              </select>
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-1 max-h-[120px] overflow-y-auto custom-scrollbar">
+                                              {(nestedHostedResults.length > 0 ? nestedHostedResults : (!nestedHostedQuery && !nestedHostedCategory) ? searchHostedImages('') : []).map((img, i) => (
+                                                <button key={i} onClick={() => { updateNestedImage(nIdx, img.url); setNestedImgPicker(null); }} className="relative group rounded overflow-hidden aspect-square border border-[#2e2e2e] hover:border-[#A78BFA] transition-colors bg-[#1c1c1c]">
+                                                  <img src={img.url} alt={img.tags[0]} className="w-full h-full object-contain p-0.5" />
+                                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                                                    <Check className="w-3 h-3 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                  </div>
+                                                </button>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
                           </>
                         )}
                       </div>

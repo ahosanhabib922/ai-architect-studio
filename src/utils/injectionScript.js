@@ -203,6 +203,16 @@ export const getInjectionScript = () => `
           transition: inline('transition') || ''
       };
 
+      // Find nested images inside the selected element
+      const nestedImages = [];
+      if (currentSelected.tagName !== 'IMG') {
+        const imgs = currentSelected.querySelectorAll('img');
+        imgs.forEach((img, i) => {
+          if (!img.dataset.aiId) img.dataset.aiId = 'ai-el-' + Math.random().toString(36).substr(2, 9);
+          nestedImages.push({ id: img.dataset.aiId, src: img.src || '', alt: img.alt || '', index: i });
+        });
+      }
+
       window.parent.postMessage({
         type: 'ELEMENT_SELECTED',
         id: currentSelected.dataset.aiId,
@@ -216,7 +226,8 @@ export const getInjectionScript = () => `
         outerHTML: currentSelected.outerHTML,
         domPath: path,
         styles: styles,
-        rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height }
+        rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height },
+        nestedImages: nestedImages
       }, '*');
 
       // Show resize handles
@@ -278,6 +289,14 @@ export const getInjectionScript = () => `
             if (window.interactionMode === 'design') highlight(el);
             window.parent.postMessage({ type: 'DOCUMENT_UPDATED', html: getCleanHTML() }, '*');
             positionOverlay(el);
+         }
+       }
+       if (e.data.type === 'UPDATE_NESTED_IMAGE') {
+         const img = document.querySelector('[data-ai-id="' + e.data.imgId + '"]');
+         if (img) {
+            if (e.data.src !== undefined) img.src = e.data.src;
+            if (e.data.alt !== undefined) img.alt = e.data.alt;
+            window.parent.postMessage({ type: 'DOCUMENT_UPDATED', html: getCleanHTML() }, '*');
          }
        }
        if (e.data.type === 'UPDATE_ELEMENT_STYLE') {
