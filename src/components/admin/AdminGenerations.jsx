@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Sparkles, FileCode, MessageSquare, Clock, ChevronDown, ChevronUp, Eye, X, Download, FolderDown, Code, Layout, Loader, Smartphone, History } from 'lucide-react';
+import { Search, Sparkles, FileCode, MessageSquare, Clock, ChevronDown, ChevronUp, Eye, X, Download, FolderDown, Code, Layout, Loader, Smartphone, History, User, Bot, Activity, AlertCircle, Image, Paperclip, ChevronRight } from 'lucide-react';
 import { loadAllGenerations } from '../../utils/firestoreAdmin';
 import { loadVersionSnapshotsAdmin } from '../../utils/firestoreSessions';
 import { loadJSZip } from '../../utils/loadJSZip';
@@ -17,6 +17,7 @@ const AdminGenerations = () => {
   const [versionData, setVersionData] = useState([]); // flat array of version docs
   const [versionLoading, setVersionLoading] = useState(false);
   const [versionFilter, setVersionFilter] = useState(''); // filter by fileName
+  const [conversationOpen, setConversationOpen] = useState(null); // sessionId with open conversation
 
   const downloadFile = (fileName, content) => {
     const blob = new Blob([content], { type: 'text/html' });
@@ -264,11 +265,135 @@ const AdminGenerations = () => {
                 {isExpanded && (
                   <div className="px-5 pb-4 border-t border-slate-100 pt-3 space-y-3">
                     <div>
-                      <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Prompt</div>
+                      <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">First Prompt</div>
                       <div className="text-sm text-slate-700 bg-slate-50 rounded-xl p-3 whitespace-pre-wrap break-words max-h-40 overflow-y-auto">
                         {g.prompt}
                       </div>
                     </div>
+
+                    {/* Full Conversation Thread */}
+                    {g.messages && g.messages.length > 0 && (
+                      <div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setConversationOpen(conversationOpen === g.id ? null : g.id); }}
+                          className="flex items-center gap-2 mb-2 group"
+                        >
+                          <ChevronRight className={`w-3.5 h-3.5 text-slate-400 transition-transform ${conversationOpen === g.id ? 'rotate-90' : ''}`} />
+                          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Full Conversation</span>
+                          <span className="text-[10px] text-slate-400">({g.messages.length} messages)</span>
+                        </button>
+
+                        {conversationOpen === g.id && (
+                          <div className="bg-slate-50 rounded-xl border border-slate-200 max-h-[500px] overflow-y-auto">
+                            <div className="divide-y divide-slate-100">
+                              {g.messages.map((msg, idx) => {
+                                const ts = msg.timestamp ? new Date(msg.timestamp) : null;
+                                const timeStr = ts ? ts.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+
+                                {/* Activity log */}
+                                if (msg.type === 'activity') {
+                                  return (
+                                    <div key={idx} className="px-4 py-2 flex items-center gap-2">
+                                      <Activity className="w-3 h-3 text-slate-400 shrink-0" />
+                                      <span className="text-[11px] text-slate-400 flex-1">{msg.content}</span>
+                                      {timeStr && <span className="text-[10px] text-slate-300 shrink-0">{timeStr}</span>}
+                                    </div>
+                                  );
+                                }
+
+                                {/* Error message */}
+                                if (msg.type === 'error') {
+                                  return (
+                                    <div key={idx} className="px-4 py-2.5 flex items-start gap-2 bg-red-50/50">
+                                      <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
+                                      <div className="flex-1 min-w-0">
+                                        <span className="text-[11px] text-red-500">{msg.content}</span>
+                                      </div>
+                                      {timeStr && <span className="text-[10px] text-red-300 shrink-0">{timeStr}</span>}
+                                    </div>
+                                  );
+                                }
+
+                                {/* Files complete (AI finished generating) */}
+                                if (msg.type === 'files-complete') {
+                                  const fileList = msg.files ? Object.keys(msg.files) : [];
+                                  return (
+                                    <div key={idx} className="px-4 py-2.5 flex items-center gap-2 bg-emerald-50/40">
+                                      <FileCode className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                                      <span className="text-[11px] text-emerald-600 font-medium flex-1">
+                                        Generated {fileList.length} file{fileList.length !== 1 ? 's' : ''}: {fileList.join(', ')}
+                                      </span>
+                                      {timeStr && <span className="text-[10px] text-emerald-400 shrink-0">{timeStr}</span>}
+                                    </div>
+                                  );
+                                }
+
+                                {/* User message */}
+                                if (msg.role === 'user') {
+                                  return (
+                                    <div key={idx} className="px-4 py-3">
+                                      <div className="flex items-start gap-2.5">
+                                        <div className="w-5 h-5 rounded-full bg-[#A78BFA]/15 flex items-center justify-center shrink-0 mt-0.5">
+                                          <User className="w-3 h-3 text-[#A78BFA]" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-[11px] font-semibold text-slate-600">User</span>
+                                            {msg.template && (
+                                              <span className="px-1.5 py-0.5 text-[9px] font-medium rounded bg-[#A78BFA]/10 text-[#A78BFA]">
+                                                {msg.template.name}
+                                              </span>
+                                            )}
+                                            {timeStr && <span className="text-[10px] text-slate-300">{timeStr}</span>}
+                                          </div>
+                                          <div className="text-xs text-slate-700 whitespace-pre-wrap break-words leading-relaxed">
+                                            {msg.content?.length > 500 ? msg.content.substring(0, 500) + '...' : msg.content}
+                                          </div>
+                                          {msg.attachments && msg.attachments.length > 0 && (
+                                            <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                                              {msg.attachments.map((att, ai) => (
+                                                <span key={ai} className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 rounded text-[10px] text-slate-500">
+                                                  {att.type?.startsWith('image') ? <Image className="w-3 h-3" /> : <Paperclip className="w-3 h-3" />}
+                                                  {att.name || 'attachment'}
+                                                </span>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+
+                                {/* Model/AI response */}
+                                if (msg.role === 'model') {
+                                  return (
+                                    <div key={idx} className="px-4 py-3 bg-blue-50/30">
+                                      <div className="flex items-start gap-2.5">
+                                        <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
+                                          <Bot className="w-3 h-3 text-blue-500" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-[11px] font-semibold text-slate-600">AI</span>
+                                            {timeStr && <span className="text-[10px] text-slate-300">{timeStr}</span>}
+                                          </div>
+                                          <div className="text-xs text-slate-600 whitespace-pre-wrap break-words leading-relaxed">
+                                            {msg.content ? (msg.content.length > 300 ? msg.content.substring(0, 300) + '...' : msg.content) : 'Response generated'}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+
+                                return null;
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Generated Files */}
                     {g.fileCount > 0 && (
