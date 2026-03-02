@@ -978,7 +978,7 @@ OUTPUT RULES (CRITICAL):
 
       const streamResult = await generateAIResponseStream(
         fullPrompt, sysInstruction, allAttachments,
-        'gemini-3-pro-preview',
+        'gemini-3.1-pro-preview',
         parseAndUpdateFiles,
         abortController.signal
       );
@@ -1028,7 +1028,7 @@ OUTPUT RULES (CRITICAL):
           });
           // Persist new versions to Firestore subcollection
           if (user && currentSessionId && Object.keys(newSnapshots).length > 0) {
-            saveVersionSnapshots(user.uid, currentSessionId, newSnapshots).catch(() => {});
+            saveVersionSnapshots(user.uid, currentSessionId, newSnapshots).catch(() => { });
           }
         }
         return currentFiles;
@@ -1482,52 +1482,52 @@ OUTPUT RULES (CRITICAL):
               }
 
               return (
-              <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm whitespace-pre-wrap ${msg.role === 'user' ? 'bg-[#A78BFA] text-white rounded-br-none' : msg.type === 'error' ? 'bg-red-50 border border-red-100 text-red-700 rounded-bl-none' : 'bg-white border border-slate-100 text-slate-700 rounded-bl-none'}`}>
-                  {msg.type === 'status' ? (
-                    <div className="flex items-center gap-2 font-medium text-emerald-600"><Check className="w-4 h-4" /> {msg.content}</div>
-                  ) : msg.type === 'files-complete' ? (
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-2 font-medium text-emerald-600">
-                        <Check className="w-4 h-4" /> Generation Complete
-                      </div>
-                      <div className="flex flex-col gap-1.5 mt-1">
-                        {msg.files?.map(f => (
-                          <div key={f} className="text-xs text-slate-600 flex items-center gap-2 bg-slate-50 p-1.5 rounded-md border border-slate-100">
-                            <FileCode className="w-3.5 h-3.5 text-[#A78BFA]" /> {f}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-2">
-                      {msg.content}
-                      {msg.attachments?.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-1">
-                          {msg.attachments.map((att, i) => (
-                            att.type?.startsWith('image/') ? (
-                              <img key={i} src={att.data} alt={att.name} onClick={() => setPreviewItem({ kind: 'image', data: att.data, name: att.name })} className="w-16 h-16 object-cover rounded-lg border border-white/20 cursor-pointer hover:opacity-80 transition-opacity" />
-                            ) : (
-                              <button key={i} onClick={() => setPreviewItem({ kind: att.type === 'application/pdf' ? 'pdf' : 'text', data: att.data, content: att.content, name: att.name, type: att.type })} className="flex items-center gap-1.5 bg-white/10 border border-white/15 rounded-lg px-2.5 py-1.5 hover:bg-white/20 transition-colors">
-                                {att.type === 'application/pdf' ? <File className="w-3.5 h-3.5 text-red-300" /> : <FileText className="w-3.5 h-3.5 text-blue-300" />}
-                                <span className="text-[11px] text-white/80 truncate max-w-[100px]">{att.name}</span>
-                              </button>
-                            )
+                <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm whitespace-pre-wrap ${msg.role === 'user' ? 'bg-[#A78BFA] text-white rounded-br-none' : msg.type === 'error' ? 'bg-red-50 border border-red-100 text-red-700 rounded-bl-none' : 'bg-white border border-slate-100 text-slate-700 rounded-bl-none'}`}>
+                    {msg.type === 'status' ? (
+                      <div className="flex items-center gap-2 font-medium text-emerald-600"><Check className="w-4 h-4" /> {msg.content}</div>
+                    ) : msg.type === 'files-complete' ? (
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2 font-medium text-emerald-600">
+                          <Check className="w-4 h-4" /> Generation Complete
+                        </div>
+                        <div className="flex flex-col gap-1.5 mt-1">
+                          {msg.files?.map(f => (
+                            <div key={f} className="text-xs text-slate-600 flex items-center gap-2 bg-slate-50 p-1.5 rounded-md border border-slate-100">
+                              <FileCode className="w-3.5 h-3.5 text-[#A78BFA]" /> {f}
+                            </div>
                           ))}
                         </div>
-                      )}
-                      {msg.template && (
-                        <button onClick={() => { const t = TEMPLATES.find(tp => tp.name === msg.template.name); if (t?.source === 'firestore') { const cached = templateHtmlCache[t.id]; if (cached) setPreviewItem({ kind: 'srcdoc', html: cached, name: t.name, color: t.color }); else fetchTemplateHtml(t.id).then(html => { setTemplateHtmlCache(prev => ({ ...prev, [t.id]: html })); setPreviewItem({ kind: 'srcdoc', html, name: t.name, color: t.color }); }); } else if (t?.file) setPreviewItem({ kind: 'html', file: `/templates/${t.file}`, name: t.name, color: t.color }); }} className="flex items-center gap-2 bg-white/10 border border-white/15 rounded-lg px-2.5 py-1.5 mt-1 w-max hover:bg-white/20 transition-colors">
-                          <div className={`w-5 h-5 rounded ${msg.template.color} border border-white/20 shrink-0`}></div>
-                          <span className="text-[11px] text-white/80">{msg.template.name}</span>
-                          <Eye className="w-3 h-3 text-white/50" />
-                        </button>
-                      )}
-                    </div>
-                  )}
-                  {timeStr && <div className={`text-[10px] mt-1.5 ${msg.role === 'user' ? 'text-white/50 text-right' : 'text-slate-300'}`}>{timeStr}</div>}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        {msg.content}
+                        {msg.attachments?.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {msg.attachments.map((att, i) => (
+                              att.type?.startsWith('image/') ? (
+                                <img key={i} src={att.data} alt={att.name} onClick={() => setPreviewItem({ kind: 'image', data: att.data, name: att.name })} className="w-16 h-16 object-cover rounded-lg border border-white/20 cursor-pointer hover:opacity-80 transition-opacity" />
+                              ) : (
+                                <button key={i} onClick={() => setPreviewItem({ kind: att.type === 'application/pdf' ? 'pdf' : 'text', data: att.data, content: att.content, name: att.name, type: att.type })} className="flex items-center gap-1.5 bg-white/10 border border-white/15 rounded-lg px-2.5 py-1.5 hover:bg-white/20 transition-colors">
+                                  {att.type === 'application/pdf' ? <File className="w-3.5 h-3.5 text-red-300" /> : <FileText className="w-3.5 h-3.5 text-blue-300" />}
+                                  <span className="text-[11px] text-white/80 truncate max-w-[100px]">{att.name}</span>
+                                </button>
+                              )
+                            ))}
+                          </div>
+                        )}
+                        {msg.template && (
+                          <button onClick={() => { const t = TEMPLATES.find(tp => tp.name === msg.template.name); if (t?.source === 'firestore') { const cached = templateHtmlCache[t.id]; if (cached) setPreviewItem({ kind: 'srcdoc', html: cached, name: t.name, color: t.color }); else fetchTemplateHtml(t.id).then(html => { setTemplateHtmlCache(prev => ({ ...prev, [t.id]: html })); setPreviewItem({ kind: 'srcdoc', html, name: t.name, color: t.color }); }); } else if (t?.file) setPreviewItem({ kind: 'html', file: `/templates/${t.file}`, name: t.name, color: t.color }); }} className="flex items-center gap-2 bg-white/10 border border-white/15 rounded-lg px-2.5 py-1.5 mt-1 w-max hover:bg-white/20 transition-colors">
+                            <div className={`w-5 h-5 rounded ${msg.template.color} border border-white/20 shrink-0`}></div>
+                            <span className="text-[11px] text-white/80">{msg.template.name}</span>
+                            <Eye className="w-3 h-3 text-white/50" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    {timeStr && <div className={`text-[10px] mt-1.5 ${msg.role === 'user' ? 'text-white/50 text-right' : 'text-slate-300'}`}>{timeStr}</div>}
+                  </div>
                 </div>
-              </div>
               );
             })}
 
@@ -2062,74 +2062,74 @@ OUTPUT RULES (CRITICAL):
                                   {selectedElement.nestedImages.map((nImg, nIdx) => {
                                     const isOpen = nestedImgPicker === nIdx;
                                     return (
-                                    <div key={nImg.id} className="bg-[#1c1c1c] border border-[#2e2e2e] rounded-lg overflow-hidden">
-                                      {/* Header — thumbnail + URL + expand toggle */}
-                                      <div className="p-2 space-y-1.5">
-                                        <div className="flex items-center gap-2">
-                                          <img src={nImg.src} alt={nImg.alt} className="w-10 h-10 object-cover rounded border border-zinc-700 shrink-0 bg-zinc-900" onError={(e) => { e.target.style.display = 'none'; }} />
-                                          <span className="text-[10px] text-zinc-400 truncate flex-1">Image {nIdx + 1}</span>
-                                          <button onClick={() => { if (isOpen) { setNestedImgPicker(null); } else { setNestedImgPicker(nIdx); setNestedUnsplashQuery(''); setNestedUnsplashResults([]); setNestedHostedQuery(''); setNestedHostedResults([]); setNestedHostedCategory(''); } }} className={`p-1 rounded transition-colors ${isOpen ? 'bg-[#A78BFA]/20 text-[#A78BFA]' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`} title="Browse images">
-                                            <Search className="w-3.5 h-3.5" />
-                                          </button>
+                                      <div key={nImg.id} className="bg-[#1c1c1c] border border-[#2e2e2e] rounded-lg overflow-hidden">
+                                        {/* Header — thumbnail + URL + expand toggle */}
+                                        <div className="p-2 space-y-1.5">
+                                          <div className="flex items-center gap-2">
+                                            <img src={nImg.src} alt={nImg.alt} className="w-10 h-10 object-cover rounded border border-zinc-700 shrink-0 bg-zinc-900" onError={(e) => { e.target.style.display = 'none'; }} />
+                                            <span className="text-[10px] text-zinc-400 truncate flex-1">Image {nIdx + 1}</span>
+                                            <button onClick={() => { if (isOpen) { setNestedImgPicker(null); } else { setNestedImgPicker(nIdx); setNestedUnsplashQuery(''); setNestedUnsplashResults([]); setNestedHostedQuery(''); setNestedHostedResults([]); setNestedHostedCategory(''); } }} className={`p-1 rounded transition-colors ${isOpen ? 'bg-[#A78BFA]/20 text-[#A78BFA]' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`} title="Browse images">
+                                              <Search className="w-3.5 h-3.5" />
+                                            </button>
+                                          </div>
+                                          <input
+                                            key={nImg.src}
+                                            defaultValue={nImg.src}
+                                            onBlur={(e) => { if (e.target.value !== nImg.src) updateNestedImage(nIdx, e.target.value); }}
+                                            onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+                                            placeholder="Image URL..."
+                                            className="w-full bg-[#141414] border border-[#2e2e2e] rounded text-white text-[11px] px-2 py-1 outline-none focus:border-[#A78BFA] font-mono"
+                                          />
                                         </div>
-                                        <input
-                                          key={nImg.src}
-                                          defaultValue={nImg.src}
-                                          onBlur={(e) => { if (e.target.value !== nImg.src) updateNestedImage(nIdx, e.target.value); }}
-                                          onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
-                                          placeholder="Image URL..."
-                                          className="w-full bg-[#141414] border border-[#2e2e2e] rounded text-white text-[11px] px-2 py-1 outline-none focus:border-[#A78BFA] font-mono"
-                                        />
-                                      </div>
-                                      {/* Expanded picker — Unsplash + Hosted */}
-                                      {isOpen && (
-                                        <div className="border-t border-[#2e2e2e] p-2 space-y-2 bg-[#141414]">
-                                          {/* Unsplash */}
-                                          <div>
-                                            <label className="block text-[10px] text-zinc-500 mb-1">Unsplash</label>
-                                            <div className="flex gap-1.5">
-                                              <input value={nestedUnsplashQuery} onChange={(e) => setNestedUnsplashQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleNestedUnsplashSearch(nestedUnsplashQuery); }} placeholder="Search photos..." className="flex-1 bg-[#1c1c1c] border border-[#2e2e2e] rounded text-white text-[11px] px-2 py-1 outline-none focus:border-[#A78BFA]" />
-                                              <button onClick={() => handleNestedUnsplashSearch(nestedUnsplashQuery)} disabled={nestedUnsplashLoading || !nestedUnsplashQuery.trim()} className="p-1 bg-[#A78BFA] hover:bg-[#9061F9] text-white rounded disabled:opacity-50 transition-colors shrink-0">
-                                                {nestedUnsplashLoading ? <div className="w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <Search className="w-3 h-3" />}
-                                              </button>
+                                        {/* Expanded picker — Unsplash + Hosted */}
+                                        {isOpen && (
+                                          <div className="border-t border-[#2e2e2e] p-2 space-y-2 bg-[#141414]">
+                                            {/* Unsplash */}
+                                            <div>
+                                              <label className="block text-[10px] text-zinc-500 mb-1">Unsplash</label>
+                                              <div className="flex gap-1.5">
+                                                <input value={nestedUnsplashQuery} onChange={(e) => setNestedUnsplashQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleNestedUnsplashSearch(nestedUnsplashQuery); }} placeholder="Search photos..." className="flex-1 bg-[#1c1c1c] border border-[#2e2e2e] rounded text-white text-[11px] px-2 py-1 outline-none focus:border-[#A78BFA]" />
+                                                <button onClick={() => handleNestedUnsplashSearch(nestedUnsplashQuery)} disabled={nestedUnsplashLoading || !nestedUnsplashQuery.trim()} className="p-1 bg-[#A78BFA] hover:bg-[#9061F9] text-white rounded disabled:opacity-50 transition-colors shrink-0">
+                                                  {nestedUnsplashLoading ? <div className="w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <Search className="w-3 h-3" />}
+                                                </button>
+                                              </div>
+                                              {nestedUnsplashResults.length > 0 && (
+                                                <div className="grid grid-cols-3 gap-1 mt-1.5 max-h-[120px] overflow-y-auto custom-scrollbar">
+                                                  {nestedUnsplashResults.map(photo => (
+                                                    <button key={photo.id} onClick={() => { updateNestedImage(nIdx, photo.urls.regular); setNestedImgPicker(null); }} className="relative group rounded overflow-hidden aspect-square border border-[#2e2e2e] hover:border-[#A78BFA] transition-colors">
+                                                      <img src={photo.urls.thumb} alt={photo.alt_description || ''} className="w-full h-full object-cover" />
+                                                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                                                        <Check className="w-3 h-3 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                      </div>
+                                                    </button>
+                                                  ))}
+                                                </div>
+                                              )}
                                             </div>
-                                            {nestedUnsplashResults.length > 0 && (
-                                              <div className="grid grid-cols-3 gap-1 mt-1.5 max-h-[120px] overflow-y-auto custom-scrollbar">
-                                                {nestedUnsplashResults.map(photo => (
-                                                  <button key={photo.id} onClick={() => { updateNestedImage(nIdx, photo.urls.regular); setNestedImgPicker(null); }} className="relative group rounded overflow-hidden aspect-square border border-[#2e2e2e] hover:border-[#A78BFA] transition-colors">
-                                                    <img src={photo.urls.thumb} alt={photo.alt_description || ''} className="w-full h-full object-cover" />
+                                            {/* Hosted */}
+                                            <div>
+                                              <label className="block text-[10px] text-zinc-500 mb-1">Hosted Images</label>
+                                              <div className="flex gap-1.5 mb-1.5">
+                                                <input value={nestedHostedQuery} onChange={(e) => { setNestedHostedQuery(e.target.value); setNestedHostedResults(searchHostedImages(e.target.value)); }} placeholder="Search by tag..." className="flex-1 bg-[#1c1c1c] border border-[#2e2e2e] rounded text-white text-[11px] px-2 py-1 outline-none focus:border-[#A78BFA]" />
+                                                <select value={nestedHostedCategory} onChange={(e) => { setNestedHostedCategory(e.target.value); setNestedHostedResults(e.target.value ? searchHostedImages(e.target.value) : searchHostedImages(nestedHostedQuery)); }} className="bg-[#1c1c1c] border border-[#2e2e2e] rounded text-zinc-300 text-[10px] px-1 outline-none focus:border-[#A78BFA] shrink-0">
+                                                  <option value="">All</option>
+                                                  {getCategories().map(cat => <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>)}
+                                                </select>
+                                              </div>
+                                              <div className="grid grid-cols-3 gap-1 max-h-[120px] overflow-y-auto custom-scrollbar">
+                                                {(nestedHostedResults.length > 0 ? nestedHostedResults : (!nestedHostedQuery && !nestedHostedCategory) ? searchHostedImages('') : []).map((img, i) => (
+                                                  <button key={i} onClick={() => { updateNestedImage(nIdx, img.url); setNestedImgPicker(null); }} className="relative group rounded overflow-hidden aspect-square border border-[#2e2e2e] hover:border-[#A78BFA] transition-colors bg-[#1c1c1c]">
+                                                    <img src={img.url} alt={img.tags[0]} className="w-full h-full object-contain p-0.5" />
                                                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
                                                       <Check className="w-3 h-3 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                                                     </div>
                                                   </button>
                                                 ))}
                                               </div>
-                                            )}
-                                          </div>
-                                          {/* Hosted */}
-                                          <div>
-                                            <label className="block text-[10px] text-zinc-500 mb-1">Hosted Images</label>
-                                            <div className="flex gap-1.5 mb-1.5">
-                                              <input value={nestedHostedQuery} onChange={(e) => { setNestedHostedQuery(e.target.value); setNestedHostedResults(searchHostedImages(e.target.value)); }} placeholder="Search by tag..." className="flex-1 bg-[#1c1c1c] border border-[#2e2e2e] rounded text-white text-[11px] px-2 py-1 outline-none focus:border-[#A78BFA]" />
-                                              <select value={nestedHostedCategory} onChange={(e) => { setNestedHostedCategory(e.target.value); setNestedHostedResults(e.target.value ? searchHostedImages(e.target.value) : searchHostedImages(nestedHostedQuery)); }} className="bg-[#1c1c1c] border border-[#2e2e2e] rounded text-zinc-300 text-[10px] px-1 outline-none focus:border-[#A78BFA] shrink-0">
-                                                <option value="">All</option>
-                                                {getCategories().map(cat => <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>)}
-                                              </select>
-                                            </div>
-                                            <div className="grid grid-cols-3 gap-1 max-h-[120px] overflow-y-auto custom-scrollbar">
-                                              {(nestedHostedResults.length > 0 ? nestedHostedResults : (!nestedHostedQuery && !nestedHostedCategory) ? searchHostedImages('') : []).map((img, i) => (
-                                                <button key={i} onClick={() => { updateNestedImage(nIdx, img.url); setNestedImgPicker(null); }} className="relative group rounded overflow-hidden aspect-square border border-[#2e2e2e] hover:border-[#A78BFA] transition-colors bg-[#1c1c1c]">
-                                                  <img src={img.url} alt={img.tags[0]} className="w-full h-full object-contain p-0.5" />
-                                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                                                    <Check className="w-3 h-3 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                  </div>
-                                                </button>
-                                              ))}
                                             </div>
                                           </div>
-                                        </div>
-                                      )}
-                                    </div>
+                                        )}
+                                      </div>
                                     );
                                   })}
                                 </div>
