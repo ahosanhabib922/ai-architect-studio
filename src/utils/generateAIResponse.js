@@ -72,15 +72,19 @@ export const generateAIResponse = async (prompt, systemInstruction, attachments 
 export const generateAIResponseStream = async (prompt, systemInstruction, attachments = [], model = 'gemini-3-pro-preview', onChunk, signal) => {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${apiKey}&alt=sse`;
   const parts = buildParts(prompt, attachments);
+  const body = buildBody(parts, systemInstruction);
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: buildBody(parts, systemInstruction),
-    signal
-  });
-
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  // Retry on 503/429 (overloaded/rate-limited) up to 3 times with backoff
+  let res;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, signal });
+    if (res.ok) break;
+    if ((res.status === 503 || res.status === 429) && attempt < 2) {
+      await new Promise(r => setTimeout(r, (attempt + 1) * 2000));
+      continue;
+    }
+    throw new Error(`HTTP ${res.status}`);
+  }
 
   const reader = res.body.getReader();
   const decoder = new TextDecoder();

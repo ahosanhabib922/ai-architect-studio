@@ -207,6 +207,17 @@ Since all files are standalone HTML, every \`.page.html\` MUST contain the exact
 <SURGICAL_EDIT_MODE>
 When requested to make a specific change to existing files: PRESERVE EVERYTHING. Only output files that actually changed. Zero chat. Focus exclusively on technical execution. Output ONLY the Roadmap followed by the Files.
 </SURGICAL_EDIT_MODE>
+
+<GLOBAL_OUTPUT_FORMAT>
+██ CRITICAL OUTPUT RULE — APPLIES TO ALL MODES ██
+Every HTML file you output MUST be prefixed with: FILE: filename.html
+Then immediately followed by the complete HTML code starting with <!DOCTYPE html>.
+This applies to EVERY mode: component, single page, multi-page, surgical edit, resume, graphic, presentation.
+Example: FILE: index.html
+<!DOCTYPE html><html lang="en">...
+If outputting multiple files, each one gets its own FILE: prefix.
+Do NOT wrap code in markdown backticks (\`\`\`html). Output raw HTML directly after the FILE: line.
+</GLOBAL_OUTPUT_FORMAT>
 `;
 
 export const PRD_ANALYSIS_INSTRUCTION = `

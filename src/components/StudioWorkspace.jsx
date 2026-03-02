@@ -799,12 +799,13 @@ const StudioWorkspace = () => {
       // Full context: send ALL files so AI knows about every page's content, elements, and structure
       const currentActive = activeFileName || Object.keys(generatedFiles)[0];
       const allFileEntries = Object.entries(generatedFiles);
+      // Use === markers (not "FILE:") so context labels don't confuse the output parser
       let filesContext = allFileEntries.map(([name, html]) => {
-        const label = name === currentActive ? `[ACTIVE FILE: ${name}] ← User is viewing this file` : `[FILE: ${name}]`;
+        const label = name === currentActive ? `=== ACTIVE: ${name} (user is viewing this) ===` : `=== ${name} ===`;
         return `${label}\n${html}`;
-      }).join('\n\n' + '='.repeat(60) + '\n\n');
+      }).join('\n\n' + '-'.repeat(60) + '\n\n');
 
-      const componentConvertRule = isComponentRef ? `\n7. The user provided a React/TSX component. Convert it to plain HTML + CSS animations + minimal vanilla JS and integrate into the page. Keep Tailwind classes. Convert: React hooks→vanilla JS, framer-motion→CSS @keyframes/transitions, shadcn→styled HTML. Do NOT use React, npm, or import statements. All JS must be idempotent (check if already initialized). Prefer CSS-only animations. All content must have a visible initial HTML state.` : '';
+      const componentConvertRule = isComponentRef ? `\n8. The user provided a React/TSX component. Convert it to plain HTML + CSS animations + minimal vanilla JS and integrate into the page. Keep Tailwind classes. Convert: React hooks→vanilla JS, framer-motion→CSS @keyframes/transitions, shadcn→styled HTML. Do NOT use React, npm, or import statements. All JS must be idempotent (check if already initialized). Prefer CSS-only animations. All content must have a visible initial HTML state.` : '';
 
       fullPrompt = `SURGICAL EDIT REQUEST: "${userPrompt}"
 
@@ -817,7 +818,8 @@ RULES FOR THIS EDIT:
 3. Do NOT redesign, restyle, rearrange, or "improve" anything the user did not ask to change.
 4. Do NOT return unchanged files.
 5. Each returned file must be COMPLETE standalone HTML (full file, not a snippet).
-6. Keep navigation, shared components (navbar, footer), and cross-page links consistent across all files you modify.${componentConvertRule}`;
+6. Keep navigation, shared components (navbar, footer), and cross-page links consistent across all files you modify.
+7. OUTPUT FORMAT (CRITICAL): For EACH file you return, prefix it with FILE: followed by the EXACT filename. Example: FILE: index.page.html then the full HTML code. You MUST use the exact same filename as shown above.${componentConvertRule}`;
 
     } else {
       // FIRST GENERATION: Full system instruction with catalog, style, and collection
@@ -929,8 +931,10 @@ OUTPUT RULES (CRITICAL):
           if (!trackedFiles.includes(fn)) trackedFiles.push(fn);
         }
 
+        // Fallback: no FILE: markers but HTML present — use active filename or default to index.html
         if (trackedFiles.length === 0 && currentText.includes('<html')) {
-          trackedFiles.push('index.html');
+          const fallbackName = activeFileNameRef.current || 'index.html';
+          trackedFiles.push(fallbackName);
         }
 
         setGeneratingFiles(trackedFiles);
@@ -949,10 +953,14 @@ OUTPUT RULES (CRITICAL):
           if (fc) newFiles[fn] = fc;
         }
 
-        if (trackedFiles.length === 0 && currentText.includes('<html')) {
+        // Fallback parser: no FILE: markers found, extract HTML directly
+        if (Object.keys(newFiles).length === 0 && currentText.includes('<html')) {
           let fc = currentText.replace(/^```\w*\n?/g, '').replace(/\n?```$/, '').trim();
           const tagMatch = fc.match(/<(?:!DOCTYPE|html)[\s\S]*/i);
-          if (tagMatch) newFiles['index.html'] = tagMatch[0];
+          if (tagMatch) {
+            const fallbackName = activeFileNameRef.current || 'index.html';
+            newFiles[fallbackName] = tagMatch[0];
+          }
         }
 
         if (Object.keys(newFiles).length > 0) {
