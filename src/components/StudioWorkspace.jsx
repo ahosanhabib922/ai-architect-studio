@@ -22,6 +22,7 @@ import { loadJSZip } from '../utils/loadJSZip';
 import { generateAIResponse, generateAIResponseStream } from '../utils/generateAIResponse';
 import { getInjectionScript } from '../utils/injectionScript';
 import { replaceImagesInFiles } from '../utils/replaceImages';
+import { swapIconPack, extractIcons, patchIconsInHTML, ensureIconifyCDN, suggestIcon, buildIconifyElement, extractAttrsFromElement } from '../utils/iconSwap';
 import { GOOGLE_FONTS } from '../config/fonts';
 import { useAuth } from '../contexts/AuthContext';
 import { loadSessionsFromFirestore, saveSessionToFirestore, deleteSessionFromFirestore, saveVersionSnapshots, loadVersionSnapshots } from '../utils/firestoreSessions';
@@ -139,10 +140,17 @@ const StudioWorkspace = () => {
   const [showIconPackPanel, setShowIconPackPanel] = useState(false);
   const [selectedIconPack, setSelectedIconPack] = useState(null);
   const [isChangingIcons, setIsChangingIcons] = useState(false);
-  const iconPackAbortRef = useRef(null);
+  const [isAISwapping, setIsAISwapping] = useState(false);
+  const [iconSwapMode, setIconSwapMode] = useState('auto'); // 'auto' | 'ai' | 'manual'
   const [iconPacksList, setIconPacksList] = useState([]);
   const [iconPacksLoading, setIconPacksLoading] = useState(false);
   const [packSearch, setPackSearch] = useState('');
+  const [showManualIconModal, setShowManualIconModal] = useState(false);
+  const [manualIconData, setManualIconData] = useState({}); // { [fileName]: [{ match, prefix, name, semantic }] }
+  const [manualSelections, setManualSelections] = useState({}); // { [rowKey]: targetIconName }
+  const [iconSearchResults, setIconSearchResults] = useState({}); // { [rowKey]: string[] }
+  const [iconSearchQueries, setIconSearchQueries] = useState({}); // { [rowKey]: string }
+  const iconSearchTimers = useRef({});
   const [attachments, setAttachments] = useState([]);
   const [previewItem, setPreviewItem] = useState(null);
 
@@ -1295,100 +1303,204 @@ OUTPUT RULES (CRITICAL):
     setIsPublishing(false);
   };
 
-  // --- Icon Pack Switcher ---
-  const handleIconPackChange = async () => {
-    const pack = ICON_PACKS.find(p => p.id === selectedIconPack);
-    if (!pack || isChangingIcons || Object.keys(generatedFiles).length === 0) return;
+  // --- Icon Pack Switcher helpers ---
+  const getSelectedPack = () => (iconPacksList.length > 0 ? iconPacksList : ICON_PACKS).find(p => p.id === selectedIconPack);
 
+  // Mode 2: Auto (instant, zero tokens, client-side regex)
+  const handleAutoSwap = () => {
+    const pack = getSelectedPack();
+    if (!pack || isChangingIcons || Object.keys(generatedFiles).length === 0) return;
     setIsChangingIcons(true);
     setShowIconPackPanel(false);
-    setGenerationStatus(`Switching icons to ${pack.name}...`);
-    iconPackAbortRef.current = new AbortController();
-
-    try {
-      const allFiles = Object.entries(generatedFiles);
-      const filesContext = allFiles.map(([name, html]) => `FILE: ${name}\n${html}`).join('\n\n' + '='.repeat(60) + '\n\n');
-
-      const prompt = `ICON PACK REPLACEMENT TASK
-
-Replace ALL icons across the HTML files below with Iconify web component icons from the "${pack.name}" pack (prefix: "${pack.prefix}").
-
-ICONIFY SYNTAX (use this for every icon):
-<iconify-icon icon="${pack.prefix}:icon-name"></iconify-icon>
-
-ICONIFY CDN (add once to each file's <head>, remove other icon CDN links):
-<script src="https://cdn.jsdelivr.net/npm/iconify-icon@3.0.0/dist/iconify-icon.min.js"></script>
-
-WHAT TO DETECT AND REPLACE:
-- Font Awesome: <i class="fa fa-home">, <i class="fas fa-home">, <i class="fa-solid fa-home">
-- Material Icons: <span class="material-icons">home</span>, <i class="material-symbols-outlined">home</i>
-- Bootstrap Icons: <i class="bi bi-house">
-- Heroicons SVG: inline <svg> elements that are icon-sized (width/height 16-32px)
-- Tabler/Feather/Lucide SVG icons
-- Emoji used as icons (🏠 ❤️ ⭐ 🔍 📞 ✉️ ➡️ ✓ etc.) — replace with proper icon equivalents
-- Any <i>, <span>, or <svg> element clearly used as an icon
-
-REPLACEMENT RULES:
-1. Use the semantically equivalent icon name in the "${pack.prefix}" prefix.
-2. Preserve the original element's size and color using style or class on <iconify-icon>. Example: <iconify-icon icon="${pack.prefix}:home" style="font-size:24px;color:inherit"></iconify-icon>
-3. Add the Iconify CDN <script> to each file's <head> (before </head>).
-4. Remove old icon CDN links (Font Awesome CSS/JS links, Material Icons CSS, etc.).
-5. Keep ALL other HTML, CSS, and JavaScript completely unchanged.
-6. Return ALL ${allFiles.length} file(s) — even files with no icons — using FILE: prefix.
-
-FILES:
-${filesContext}`;
-
-      const sysInstruction = `You are an expert HTML developer specializing in icon library migrations. Your only task is to find and replace icon elements with Iconify web component equivalents. Follow all instructions precisely. Output raw HTML with FILE: prefix for each file. Do not add markdown code fences.`;
-
-      // Parser: extract updated files from streaming response
-      const parseIconFiles = (text) => {
-        const fileContentRegex = /FILE:\s*([\w.-]+)\s*([\s\S]*?)(?=\nFILE:|$)/g;
-        let match;
+    setTimeout(() => {
+      try {
         const newFiles = {};
-        while ((match = fileContentRegex.exec(text)) !== null) {
-          let fn = match[1].trim();
-          let fc = match[2].trim();
-          fc = fc.replace(/^```\w*\n?/g, '').replace(/\n?```$/, '').trim();
-          const tagMatch = fc.match(/<(?:!DOCTYPE|html)[\s\S]*/i);
-          if (tagMatch) fc = tagMatch[0];
-          if (fc) newFiles[fn] = fc;
+        let totalReplaced = 0;
+        Object.entries(generatedFiles).forEach(([name, html]) => {
+          const { html: updated, replacedCount } = swapIconPack(html, pack.prefix || pack.id);
+          newFiles[name] = updated;
+          totalReplaced += replacedCount;
+        });
+        setGeneratedFiles(prev => ({ ...prev, ...newFiles }));
+        setMessages(prev => [...prev, {
+          role: 'model', type: 'activity',
+          content: `⚡ Auto-swapped to ${pack.name} — ${totalReplaced} icon${totalReplaced !== 1 ? 's' : ''} replaced instantly (0 tokens)`,
+          timestamp: Date.now()
+        }]);
+      } catch (err) {
+        console.error('Icon swap failed:', err);
+      } finally {
+        setIsChangingIcons(false);
+      }
+    }, 50);
+  };
+
+  // Mode 3: AI Smart (extracts icons only, ~50-200 tokens)
+  const handleAISwap = async () => {
+    const pack = getSelectedPack();
+    if (!pack || isAISwapping || Object.keys(generatedFiles).length === 0) return;
+    setIsAISwapping(true);
+    setShowIconPackPanel(false);
+    try {
+      const targetPrefix = pack.prefix || pack.id;
+      // Extract all unique icons across all files
+      const allIconsByFile = {};
+      const uniqueIcons = new Map(); // "prefix:name" -> icon obj
+      Object.entries(generatedFiles).forEach(([fileName, html]) => {
+        const icons = extractIcons(html);
+        allIconsByFile[fileName] = icons;
+        icons.forEach(icon => {
+          const key = `${icon.prefix}:${icon.name}`;
+          if (!uniqueIcons.has(key)) uniqueIcons.set(key, icon);
+        });
+      });
+      if (uniqueIcons.size === 0) {
+        setMessages(prev => [...prev, { role: 'model', type: 'activity', content: `No icons detected. Try Auto mode which handles more icon formats.`, timestamp: Date.now() }]);
+        return;
+      }
+      // Build compact prompt — only icon names, not full HTML
+      const iconList = Array.from(uniqueIcons.entries())
+        .map(([key, icon]) => `${key} (meaning: ${icon.semantic})`)
+        .join('\n');
+      const prompt = `You are an icon name translator. Convert these icons to the "${targetPrefix}" Iconify icon pack.
+
+Icons to convert:
+${iconList}
+
+Respond ONLY with a valid JSON array, no markdown, no explanation:
+[{"from":"prefix:iconname","to":"newIconName"},...]
+
+Rules:
+- "from" = exact prefix:name from the list
+- "to" = the icon name in ${targetPrefix} pack (name only, no prefix)
+- Use real ${targetPrefix} icon names that actually exist
+- Preserve the semantic meaning`;
+      const { text: responseText, usage } = await generateAIResponse(prompt, "You are an icon name translator. Respond ONLY with valid JSON.", []);
+      if (user && usage) { trackTokenUsage(user.uid, usage); setUserTokensUsed(prev => prev + (usage.totalTokens || 0)); }
+      // Parse JSON from response
+      let mappings = [];
+      const jsonMatch = responseText.match(/\[[\s\S]*?\]/);
+      if (jsonMatch) mappings = JSON.parse(jsonMatch[0]);
+      const replacementMap = {};
+      mappings.forEach(({ from, to }) => { if (from && to) replacementMap[from] = to; });
+      // Apply replacements to all files
+      const newFiles = {};
+      let totalReplaced = 0;
+      Object.entries(generatedFiles).forEach(([fileName, html]) => {
+        const fileIcons = allIconsByFile[fileName] || [];
+        const replacements = [];
+        fileIcons.forEach(icon => {
+          const key = `${icon.prefix}:${icon.name}`;
+          const newName = replacementMap[key];
+          if (!newName) return;
+          const { style, keepClasses } = extractAttrsFromElement(icon.match);
+          replacements.push({ original: icon.match, replacement: buildIconifyElement(targetPrefix, newName, style, keepClasses) });
+        });
+        let updatedHtml = html;
+        if (replacements.length > 0) {
+          const { html: patched } = patchIconsInHTML(html, replacements);
+          updatedHtml = patched;
+          totalReplaced += replacements.length;
         }
-        if (Object.keys(newFiles).length > 0) {
-          setGeneratedFiles(prev => ({ ...prev, ...newFiles }));
-        }
-        return newFiles;
-      };
-
-      let lastText = '';
-      const onChunk = (text) => {
-        lastText = text;
-        parseIconFiles(text);
-      };
-
-      await generateAIResponseStream(
-        prompt, sysInstruction, [],
-        'gemini-3-pro-preview',
-        onChunk,
-        iconPackAbortRef.current.signal
-      );
-
-      // Final parse after stream ends
-      parseIconFiles(lastText);
-
+        newFiles[fileName] = ensureIconifyCDN(updatedHtml);
+      });
+      setGeneratedFiles(prev => ({ ...prev, ...newFiles }));
       setMessages(prev => [...prev, {
-        role: 'model',
-        type: 'activity',
-        content: `Switched icon pack to ${pack.name} (${pack.prefix}:*)`,
+        role: 'model', type: 'activity',
+        content: `🤖 AI swapped to ${pack.name} — ${totalReplaced} icon${totalReplaced !== 1 ? 's' : ''} replaced (${uniqueIcons.size} unique icons translated with AI)`,
         timestamp: Date.now()
       }]);
     } catch (err) {
-      if (err.name !== 'AbortError') console.error('Icon pack change failed:', err);
+      console.error('AI icon swap failed:', err);
+      setMessages(prev => [...prev, { role: 'model', type: 'activity', content: `AI icon swap failed: ${err.message}. Try Auto mode instead.`, timestamp: Date.now() }]);
     } finally {
-      setIsChangingIcons(false);
-      setGenerationStatus('');
-      iconPackAbortRef.current = null;
+      setIsAISwapping(false);
     }
+  };
+
+  // Mode 1: Manual — open per-icon picker modal
+  const handleOpenManual = () => {
+    const pack = getSelectedPack();
+    if (!pack || Object.keys(generatedFiles).length === 0) return;
+    const targetPrefix = pack.prefix || pack.id;
+    const iconData = {};
+    const initialQueries = {};
+    const initialSelections = {};
+    Object.entries(generatedFiles).forEach(([fileName, html]) => {
+      const icons = extractIcons(html);
+      if (icons.length > 0) {
+        iconData[fileName] = icons;
+        icons.forEach((icon, i) => {
+          const rowKey = `${fileName}::${i}`;
+          const suggested = suggestIcon(icon.semantic, targetPrefix);
+          initialQueries[rowKey] = suggested;
+          initialSelections[rowKey] = suggested;
+        });
+      }
+    });
+    setManualIconData(iconData);
+    setManualSelections(initialSelections);
+    setIconSearchQueries(initialQueries);
+    setIconSearchResults({});
+    setShowManualIconModal(true);
+    setShowIconPackPanel(false);
+  };
+
+  // Apply manual selections
+  const handleManualApply = () => {
+    const pack = getSelectedPack();
+    if (!pack) return;
+    const targetPrefix = pack.prefix || pack.id;
+    const newFiles = {};
+    let totalReplaced = 0;
+    Object.entries(generatedFiles).forEach(([fileName, html]) => {
+      const fileIcons = manualIconData[fileName] || [];
+      const replacements = [];
+      fileIcons.forEach((icon, i) => {
+        const rowKey = `${fileName}::${i}`;
+        const newName = manualSelections[rowKey];
+        if (!newName) return;
+        const { style, keepClasses } = extractAttrsFromElement(icon.match);
+        replacements.push({ original: icon.match, replacement: buildIconifyElement(targetPrefix, newName, style, keepClasses) });
+      });
+      let updatedHtml = html;
+      if (replacements.length > 0) {
+        const { html: patched } = patchIconsInHTML(html, replacements);
+        updatedHtml = patched;
+        totalReplaced += replacements.length;
+      }
+      newFiles[fileName] = ensureIconifyCDN(updatedHtml);
+    });
+    setGeneratedFiles(prev => ({ ...prev, ...newFiles }));
+    setShowManualIconModal(false);
+    setMessages(prev => [...prev, {
+      role: 'model', type: 'activity',
+      content: `✏️ Manual swap to ${pack.name} — ${totalReplaced} icon${totalReplaced !== 1 ? 's' : ''} replaced`,
+      timestamp: Date.now()
+    }]);
+  };
+
+  // Debounced search for manual picker rows
+  const searchIconForRow = (rowKey, query, prefix) => {
+    setIconSearchQueries(prev => ({ ...prev, [rowKey]: query }));
+    clearTimeout(iconSearchTimers.current[rowKey]);
+    if (!query.trim()) {
+      setIconSearchResults(prev => ({ ...prev, [rowKey]: [] }));
+      return;
+    }
+    iconSearchTimers.current[rowKey] = setTimeout(async () => {
+      try {
+        const res = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(query)}&prefix=${prefix}&limit=12`);
+        const data = await res.json();
+        const icons = (data.icons || []).map(fullName => {
+          const parts = fullName.split(':');
+          return parts.length > 1 ? parts[1] : fullName;
+        });
+        setIconSearchResults(prev => ({ ...prev, [rowKey]: icons }));
+      } catch {
+        setIconSearchResults(prev => ({ ...prev, [rowKey]: [] }));
+      }
+    }, 350);
   };
 
   const currentPreviewHTML = generatedFiles[activeFileName] || '';
@@ -2092,22 +2204,66 @@ ${filesContext}`;
                       )}
                     </div>
 
-                    {/* Footer — selected + apply */}
+                    {/* Footer — mode tabs + apply */}
                     <div className="px-4 py-3 border-t border-slate-100 bg-slate-50 shrink-0">
                       {selectedPack && (
-                        <p className="text-[10px] text-slate-500 mb-2">
+                        <p className="text-[10px] text-slate-500 mb-2.5">
                           Selected: <span className="font-semibold text-[#A78BFA]">{selectedPack.name}</span>
                           <span className="text-slate-400 ml-1">({selectedPack.id}:*) · {selectedPack.count?.toLocaleString()} icons</span>
                         </p>
                       )}
-                      <button
-                        onClick={handleIconPackChange}
-                        disabled={!selectedIconPack}
-                        className="w-full py-2 bg-[#A78BFA] hover:bg-[#9061F9] disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
-                      >
-                        <Zap className="w-3.5 h-3.5" />
-                        {selectedPack ? `Apply ${selectedPack.name} with AI` : 'Select a pack to apply'}
-                      </button>
+                      {/* Mode tabs */}
+                      <div className="flex rounded-lg bg-slate-200 p-0.5 mb-2.5 text-[10px] font-semibold">
+                        {[
+                          { id: 'auto', label: '⚡ Auto', title: 'Instant, 0 tokens' },
+                          { id: 'ai',   label: '🤖 AI',   title: 'Precise, ~100 tokens' },
+                          { id: 'manual', label: '✏️ Manual', title: 'Per-icon control' },
+                        ].map(mode => (
+                          <button
+                            key={mode.id}
+                            onClick={() => setIconSwapMode(mode.id)}
+                            title={mode.title}
+                            className={`flex-1 py-1.5 rounded-md transition-all ${iconSwapMode === mode.id ? 'bg-white text-[#A78BFA] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                          >{mode.label}</button>
+                        ))}
+                      </div>
+                      {/* Mode description */}
+                      <p className="text-[10px] text-slate-400 mb-2 text-center">
+                        {iconSwapMode === 'auto' && 'Client-side regex — instant swap, zero AI tokens used'}
+                        {iconSwapMode === 'ai' && 'AI translates icon names only — ~100 tokens, not full HTML'}
+                        {iconSwapMode === 'manual' && 'Pick the exact replacement for each icon individually'}
+                      </p>
+                      {/* Action button */}
+                      {iconSwapMode === 'auto' && (
+                        <button
+                          onClick={handleAutoSwap}
+                          disabled={!selectedIconPack || isChangingIcons}
+                          className="w-full py-2 bg-[#A78BFA] hover:bg-[#9061F9] disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+                        >
+                          {isChangingIcons ? <div className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+                          {selectedPack ? `Apply ${selectedPack.name} Instantly` : 'Select a pack to apply'}
+                        </button>
+                      )}
+                      {iconSwapMode === 'ai' && (
+                        <button
+                          onClick={handleAISwap}
+                          disabled={!selectedIconPack || isAISwapping}
+                          className="w-full py-2 bg-[#A78BFA] hover:bg-[#9061F9] disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+                        >
+                          {isAISwapping ? <div className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" /> : <Bot className="w-3.5 h-3.5" />}
+                          {selectedPack ? `Apply with AI (~100 tokens)` : 'Select a pack to apply'}
+                        </button>
+                      )}
+                      {iconSwapMode === 'manual' && (
+                        <button
+                          onClick={handleOpenManual}
+                          disabled={!selectedIconPack}
+                          className="w-full py-2 bg-[#A78BFA] hover:bg-[#9061F9] disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                          {selectedPack ? `Open Manual Picker` : 'Select a pack to apply'}
+                        </button>
+                      )}
                     </div>
                   </div>
                   );
@@ -2798,6 +2954,130 @@ ${filesContext}`;
           }}
         />
       )}
+
+      {/* Manual Icon Picker Modal */}
+      {showManualIconModal && (() => {
+        const pack = getSelectedPack();
+        const targetPrefix = pack ? (pack.prefix || pack.id) : '';
+        const totalIcons = Object.values(manualIconData).reduce((s, arr) => s + arr.length, 0);
+        return (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowManualIconModal(false)}>
+            <div className="w-full max-w-3xl max-h-[90vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 shrink-0">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900">✏️ Manual Icon Picker</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Switching to <span className="font-semibold text-[#A78BFA]">{pack?.name}</span> — {totalIcons} icon{totalIcons !== 1 ? 's' : ''} detected
+                  </p>
+                </div>
+                <button onClick={() => setShowManualIconModal(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              {/* Icon rows */}
+              <div className="overflow-y-auto flex-1 custom-scrollbar">
+                {Object.entries(manualIconData).map(([fileName, icons]) => (
+                  <div key={fileName}>
+                    <div className="sticky top-0 bg-slate-50 border-b border-slate-100 px-6 py-2 z-10">
+                      <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">{fileName} — {icons.length} icon{icons.length !== 1 ? 's' : ''}</p>
+                    </div>
+                    {icons.map((icon, i) => {
+                      const rowKey = `${fileName}::${i}`;
+                      const selectedName = manualSelections[rowKey] || '';
+                      const query = iconSearchQueries[rowKey] ?? selectedName;
+                      const results = iconSearchResults[rowKey] || [];
+                      return (
+                        <div key={rowKey} className="flex items-start gap-4 px-6 py-3 border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                          {/* Source icon */}
+                          <div className="shrink-0 flex flex-col items-center gap-1 w-14">
+                            <img
+                              src={`https://api.iconify.design/${icon.prefix}/${icon.name}.svg?color=%236B7280`}
+                              alt={icon.name}
+                              className="w-8 h-8"
+                              onError={e => { e.target.style.opacity = '0.3'; }}
+                            />
+                            <span className="text-[9px] text-slate-400 font-mono text-center leading-tight truncate w-full">{icon.prefix}:{icon.name}</span>
+                          </div>
+                          {/* Arrow */}
+                          <div className="shrink-0 mt-2 text-slate-300">→</div>
+                          {/* Target search + results */}
+                          <div className="flex-1 min-w-0">
+                            <div className="relative mb-1.5">
+                              <input
+                                type="text"
+                                value={query}
+                                onChange={e => searchIconForRow(rowKey, e.target.value, targetPrefix)}
+                                placeholder={`Search ${targetPrefix} icons...`}
+                                className="w-full pl-3 pr-8 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#A78BFA] focus:ring-1 focus:ring-[#A78BFA]/20"
+                              />
+                              {query && (
+                                <button
+                                  onClick={() => { setIconSearchQueries(p => ({ ...p, [rowKey]: '' })); setIconSearchResults(p => ({ ...p, [rowKey]: [] })); }}
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
+                            {/* Search results */}
+                            {results.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5">
+                                {results.map(name => (
+                                  <button
+                                    key={name}
+                                    onClick={() => setManualSelections(p => ({ ...p, [rowKey]: name }))}
+                                    title={name}
+                                    className={`flex flex-col items-center gap-0.5 p-1.5 rounded-lg border transition-all ${selectedName === name ? 'border-[#A78BFA] bg-violet-50' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}
+                                  >
+                                    <img
+                                      src={`https://api.iconify.design/${targetPrefix}/${name}.svg?color=%236B7280`}
+                                      alt={name}
+                                      className="w-5 h-5"
+                                      onError={e => { e.target.style.opacity = '0.2'; }}
+                                    />
+                                    <span className="text-[8px] text-slate-400 font-mono max-w-[42px] truncate">{name}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                            {results.length === 0 && selectedName && (
+                              <div className="flex items-center gap-2">
+                                <div className={`flex flex-col items-center gap-0.5 p-1.5 rounded-lg border border-[#A78BFA] bg-violet-50`}>
+                                  <img src={`https://api.iconify.design/${targetPrefix}/${selectedName}.svg?color=%236B7280`} alt={selectedName} className="w-5 h-5" onError={e => { e.target.style.opacity = '0.2'; }} />
+                                  <span className="text-[8px] text-[#A78BFA] font-mono">{selectedName}</span>
+                                </div>
+                                <span className="text-[10px] text-slate-400">suggested · type to search more</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+                {totalIcons === 0 && (
+                  <div className="flex flex-col items-center justify-center py-16 gap-2">
+                    <p className="text-sm text-slate-500">No icons detected in generated files</p>
+                    <p className="text-xs text-slate-400">Try Auto mode which uses broader pattern matching</p>
+                  </div>
+                )}
+              </div>
+              {/* Footer */}
+              <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 shrink-0 flex items-center justify-between gap-4">
+                <p className="text-xs text-slate-500">{Object.values(manualSelections).filter(Boolean).length} of {totalIcons} icons mapped</p>
+                <div className="flex gap-2">
+                  <button onClick={() => setShowManualIconModal(false)} className="px-4 py-2 text-xs text-slate-600 hover:text-slate-800 border border-slate-200 rounded-lg hover:bg-white transition-colors">Cancel</button>
+                  <button onClick={handleManualApply} disabled={totalIcons === 0} className="px-4 py-2 text-xs font-semibold text-white bg-[#A78BFA] hover:bg-[#9061F9] disabled:opacity-50 rounded-lg transition-colors flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5" />
+                    Apply {Object.values(manualSelections).filter(Boolean).length} Replacements
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Publish Toast */}
       {/* Components Modal — Full page view of atoms/molecules/organisms */}
