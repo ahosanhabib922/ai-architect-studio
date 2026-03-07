@@ -9,7 +9,7 @@ import {
   Edit2, Bot, AlignLeft, AlignCenter, AlignRight, AlignJustify,
   MoreHorizontal, ArrowDown, CopyPlus, CornerLeftUp, Trash, Eye, Undo, Redo, Square,
   Menu, PlusCircle, MessageSquare, Trash2, Clock, Plus, FolderDown, FileCode, Search, Zap,
-  Globe, Link, ExternalLink, Unlink
+  Globe, Link, ExternalLink, Unlink, Layers
 } from 'lucide-react';
 
 import { TEMPLATES } from '../config/templates';
@@ -35,6 +35,20 @@ import Select from './ui/Select';
 const createEmptySession = (id) => ({
   id, title: 'New Design', messages: DEFAULT_MESSAGES, generatedFiles: {}, activeFileName: '', history: [], historyIndex: -1, createdAt: Date.now()
 });
+
+// Icon packs available via Iconify (single CDN, all packs)
+const ICON_PACKS = [
+  { id: 'lucide',     name: 'Lucide',               prefix: 'lucide',    count: '1,700+', desc: 'Clean & consistent — used by shadcn/ui' },
+  { id: 'heroicons',  name: 'Heroicons',             prefix: 'heroicons', count: '1,288',  desc: 'By the Tailwind CSS team' },
+  { id: 'mdi',        name: 'Material Design Icons', prefix: 'mdi',       count: '7,447',  desc: "Google's comprehensive icon set" },
+  { id: 'tabler',     name: 'Tabler Icons',          prefix: 'tabler',    count: '6,000+', desc: 'Free and pixel-perfect icons' },
+  { id: 'ph',         name: 'Phosphor Icons',        prefix: 'ph',        count: '9,000+', desc: 'Flexible family for interfaces' },
+  { id: 'bi',         name: 'Bootstrap Icons',       prefix: 'bi',        count: '2,000+', desc: 'Official Bootstrap icon set' },
+  { id: 'ri',         name: 'Remix Icons',           prefix: 'ri',        count: '3,188',  desc: 'Neutral-style icon system' },
+  { id: 'carbon',     name: 'Carbon Icons',          prefix: 'carbon',    count: '2,468',  desc: "IBM's design system icons" },
+  { id: 'fa6-solid',  name: 'Font Awesome 6',        prefix: 'fa6-solid', count: '1,400+', desc: "World's most popular icon set" },
+  { id: 'solar',      name: 'Solar Icons',           prefix: 'solar',     count: '7,476',  desc: 'Premium-style modern icons' },
+];
 
 // ==========================================
 // COMPONENT: Studio Workspace
@@ -122,6 +136,10 @@ const StudioWorkspace = () => {
   const [showFontPicker, setShowFontPicker] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showComponentsModal, setShowComponentsModal] = useState(false);
+  const [showIconPackPanel, setShowIconPackPanel] = useState(false);
+  const [selectedIconPack, setSelectedIconPack] = useState(null);
+  const [isChangingIcons, setIsChangingIcons] = useState(false);
+  const iconPackAbortRef = useRef(null);
   const [attachments, setAttachments] = useState([]);
   const [previewItem, setPreviewItem] = useState(null);
 
@@ -1247,6 +1265,102 @@ OUTPUT RULES (CRITICAL):
     setIsPublishing(false);
   };
 
+  // --- Icon Pack Switcher ---
+  const handleIconPackChange = async () => {
+    const pack = ICON_PACKS.find(p => p.id === selectedIconPack);
+    if (!pack || isChangingIcons || Object.keys(generatedFiles).length === 0) return;
+
+    setIsChangingIcons(true);
+    setShowIconPackPanel(false);
+    setGenerationStatus(`Switching icons to ${pack.name}...`);
+    iconPackAbortRef.current = new AbortController();
+
+    try {
+      const allFiles = Object.entries(generatedFiles);
+      const filesContext = allFiles.map(([name, html]) => `FILE: ${name}\n${html}`).join('\n\n' + '='.repeat(60) + '\n\n');
+
+      const prompt = `ICON PACK REPLACEMENT TASK
+
+Replace ALL icons across the HTML files below with Iconify web component icons from the "${pack.name}" pack (prefix: "${pack.prefix}").
+
+ICONIFY SYNTAX (use this for every icon):
+<iconify-icon icon="${pack.prefix}:icon-name"></iconify-icon>
+
+ICONIFY CDN (add once to each file's <head>, remove other icon CDN links):
+<script src="https://cdn.jsdelivr.net/npm/iconify-icon@3.0.0/dist/iconify-icon.min.js"></script>
+
+WHAT TO DETECT AND REPLACE:
+- Font Awesome: <i class="fa fa-home">, <i class="fas fa-home">, <i class="fa-solid fa-home">
+- Material Icons: <span class="material-icons">home</span>, <i class="material-symbols-outlined">home</i>
+- Bootstrap Icons: <i class="bi bi-house">
+- Heroicons SVG: inline <svg> elements that are icon-sized (width/height 16-32px)
+- Tabler/Feather/Lucide SVG icons
+- Emoji used as icons (🏠 ❤️ ⭐ 🔍 📞 ✉️ ➡️ ✓ etc.) — replace with proper icon equivalents
+- Any <i>, <span>, or <svg> element clearly used as an icon
+
+REPLACEMENT RULES:
+1. Use the semantically equivalent icon name in the "${pack.prefix}" prefix.
+2. Preserve the original element's size and color using style or class on <iconify-icon>. Example: <iconify-icon icon="${pack.prefix}:home" style="font-size:24px;color:inherit"></iconify-icon>
+3. Add the Iconify CDN <script> to each file's <head> (before </head>).
+4. Remove old icon CDN links (Font Awesome CSS/JS links, Material Icons CSS, etc.).
+5. Keep ALL other HTML, CSS, and JavaScript completely unchanged.
+6. Return ALL ${allFiles.length} file(s) — even files with no icons — using FILE: prefix.
+
+FILES:
+${filesContext}`;
+
+      const sysInstruction = `You are an expert HTML developer specializing in icon library migrations. Your only task is to find and replace icon elements with Iconify web component equivalents. Follow all instructions precisely. Output raw HTML with FILE: prefix for each file. Do not add markdown code fences.`;
+
+      // Parser: extract updated files from streaming response
+      const parseIconFiles = (text) => {
+        const fileContentRegex = /FILE:\s*([\w.-]+)\s*([\s\S]*?)(?=\nFILE:|$)/g;
+        let match;
+        const newFiles = {};
+        while ((match = fileContentRegex.exec(text)) !== null) {
+          let fn = match[1].trim();
+          let fc = match[2].trim();
+          fc = fc.replace(/^```\w*\n?/g, '').replace(/\n?```$/, '').trim();
+          const tagMatch = fc.match(/<(?:!DOCTYPE|html)[\s\S]*/i);
+          if (tagMatch) fc = tagMatch[0];
+          if (fc) newFiles[fn] = fc;
+        }
+        if (Object.keys(newFiles).length > 0) {
+          setGeneratedFiles(prev => ({ ...prev, ...newFiles }));
+        }
+        return newFiles;
+      };
+
+      let lastText = '';
+      const onChunk = (text) => {
+        lastText = text;
+        parseIconFiles(text);
+      };
+
+      await generateAIResponseStream(
+        prompt, sysInstruction, [],
+        'gemini-3-pro-preview',
+        onChunk,
+        iconPackAbortRef.current.signal
+      );
+
+      // Final parse after stream ends
+      parseIconFiles(lastText);
+
+      setMessages(prev => [...prev, {
+        role: 'model',
+        type: 'activity',
+        content: `Switched icon pack to ${pack.name} (${pack.prefix}:*)`,
+        timestamp: Date.now()
+      }]);
+    } catch (err) {
+      if (err.name !== 'AbortError') console.error('Icon pack change failed:', err);
+    } finally {
+      setIsChangingIcons(false);
+      setGenerationStatus('');
+      iconPackAbortRef.current = null;
+    }
+  };
+
   const currentPreviewHTML = generatedFiles[activeFileName] || '';
   const codeViewValue = codeEditValue !== null ? codeEditValue : currentPreviewHTML;
   const iframeSource = currentPreviewHTML ? currentPreviewHTML.replace('</body>', `${getInjectionScript()}</body>`) : '';
@@ -1839,6 +1953,63 @@ OUTPUT RULES (CRITICAL):
                 <Box className="w-4 h-4" /> Components
               </button>
             )}
+
+            {/* Icon Pack Switcher */}
+            {Object.keys(generatedFiles).length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => { setShowIconPackPanel(v => !v); setShowExportMenu(false); }}
+                  disabled={isChangingIcons}
+                  title="Switch Icon Pack"
+                  className={`flex items-center gap-1.5 text-sm font-medium transition-colors disabled:opacity-50 ${showIconPackPanel ? 'text-[#A78BFA]' : 'text-slate-500 hover:text-slate-900'}`}
+                >
+                  {isChangingIcons
+                    ? <div className="w-4 h-4 rounded-full border-2 border-[#A78BFA] border-t-transparent animate-spin" />
+                    : <Layers className="w-4 h-4" />
+                  }
+                  Icons
+                </button>
+
+                {showIconPackPanel && (
+                  <div className="absolute right-0 top-full mt-3 w-72 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50 animate-fade-in">
+                    <div className="px-4 py-3 border-b border-slate-100">
+                      <p className="text-xs font-semibold text-slate-700">Switch Icon Pack</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">AI replaces all icons across every page</p>
+                    </div>
+                    <div className="max-h-60 overflow-y-auto custom-scrollbar py-1">
+                      {ICON_PACKS.map(pack => (
+                        <button
+                          key={pack.id}
+                          onClick={() => setSelectedIconPack(pack.id)}
+                          className={`w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center justify-between transition-colors ${selectedIconPack === pack.id ? 'bg-violet-50' : ''}`}
+                        >
+                          <div>
+                            <div className="text-xs font-semibold text-slate-800">{pack.name}</div>
+                            <div className="text-[10px] text-slate-400">{pack.desc} · {pack.count} icons</div>
+                          </div>
+                          {selectedIconPack === pack.id && (
+                            <div className="w-4 h-4 rounded-full bg-[#A78BFA] flex items-center justify-center shrink-0 ml-2">
+                              <Check className="w-2.5 h-2.5 text-white" />
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="px-4 py-3 border-t border-slate-100">
+                      <button
+                        onClick={handleIconPackChange}
+                        disabled={!selectedIconPack}
+                        className="w-full py-2 bg-[#A78BFA] hover:bg-[#9061F9] disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Zap className="w-3.5 h-3.5" />
+                        Apply with AI
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="relative border-r border-slate-200 pr-4">
               <button onClick={() => setShowExportMenu(!showExportMenu)} disabled={Object.keys(generatedFiles).length === 0 || isExportingReact || isExportingFlutter} className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 disabled:opacity-50">
                 {(isExportingReact || isExportingFlutter) ? (
