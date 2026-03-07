@@ -153,6 +153,7 @@ const StudioWorkspace = () => {
   const iconSearchTimers = useRef({});
   const [attachments, setAttachments] = useState([]);
   const [previewItem, setPreviewItem] = useState(null);
+  const [elementAttachments, setElementAttachments] = useState([]); // AI Edit panel attachments
 
   const [codeEditValue, setCodeEditValue] = useState(null); // local buffer for code editor (null = use generatedFiles)
   const codeEditValueRef = useRef(null);
@@ -180,6 +181,7 @@ const StudioWorkspace = () => {
   const iframeRef = useRef(null);
   const endOfChatRef = useRef(null);
   const fileInputRef = useRef(null);
+  const elementFileInputRef = useRef(null);
 
   // --- Load live instructions from Firestore ---
   useEffect(() => {
@@ -705,19 +707,26 @@ const StudioWorkspace = () => {
   };
 
   const handleElementAIEdit = async () => {
-    if (!elementPrompt.trim() || isEditingElement) return;
+    if (!elementPrompt.trim() && elementAttachments.length === 0 || isEditingElement) return;
     if (isTokenLimitReached) { alert('Token limit reached. Contact admin to reset.'); return; }
-    const editDesc = elementPrompt;
+    const editDesc = elementPrompt || `Reference from ${elementAttachments[0]?.name || 'attachment'}`;
     setIsEditingElement(true);
     const tag = selectedElement?.tagName || 'element';
-    const prompt = `You are an expert HTML/Tailwind CSS editor. Edit the following HTML element based on this instruction: "${elementPrompt}". CURRENT ELEMENT HTML: ${selectedElement.outerHTML} RULES: Return ONLY the modified HTML for this specific element. Keep the exact same 'data-ai-id="${selectedElement.id}"' attribute intact. Do NOT wrap your response in markdown fences.`;
+    let promptText = `You are an expert HTML/Tailwind CSS editor. Edit the following HTML element`;
+    if (elementPrompt.trim()) {
+      promptText += ` based on this instruction: "${elementPrompt}".`;
+    } else {
+      promptText += ` based on the attached reference. Analyze the design/content in the attachment and apply matching styles, layout, colors, and content.`;
+    }
+    promptText += ` CURRENT ELEMENT HTML: ${selectedElement.outerHTML} RULES: Return ONLY the modified HTML for this specific element. Keep the exact same 'data-ai-id="${selectedElement.id}"' attribute intact. Do NOT wrap your response in markdown fences.`;
 
     try {
-      const { text, usage } = await generateAIResponse(prompt, "You are a specialized HTML element editor.");
+      const { text, usage } = await generateAIResponse(promptText, "You are a specialized HTML element editor.", elementAttachments);
       if (user && usage) { trackTokenUsage(user.uid, usage); setUserTokensUsed(prev => prev + (usage.totalTokens || 0)); }
       let cleanHTML = text.replace(/^```html\n?/, '').replace(/\n?```$/, '').trim();
       sendToIframe({ type: 'UPDATE_ELEMENT', id: selectedElement.id, newHtml: cleanHTML });
       setElementPrompt('');
+      setElementAttachments([]);
       logActivity(`AI edited <${tag}>: "${editDesc}"`);
     } catch (e) {
       setMessages(prev => [...prev, { role: 'model', type: 'error', content: "Failed to edit element: " + e.message, timestamp: Date.now() }]);
@@ -725,6 +734,42 @@ const StudioWorkspace = () => {
       setIsEditingElement(false);
     }
   };
+
+  const handleElementFileChange = async (e) => {
+    const files = Array.from(e.target.files);
+    const newAttachments = [];
+    for (const file of files) {
+      const isTextFile = file.type.startsWith('text/') || /\.(md|js|ts|jsx|tsx|html|css|json|svg)$/.test(file.name);
+      if (isTextFile) {
+        const text = await file.text();
+        newAttachments.push({ name: file.name, type: file.type || 'text/plain', isText: true, content: text });
+      } else if (file.type.startsWith('image/') || file.type === 'application/pdf') {
+        const reader = new FileReader();
+        const dataUrl = await new Promise((resolve) => { reader.onload = (ev) => resolve(ev.target.result); reader.readAsDataURL(file); });
+        newAttachments.push({ name: file.name, type: file.type, isText: false, data: dataUrl });
+      }
+    }
+    setElementAttachments(prev => [...prev, ...newAttachments]);
+    if (elementFileInputRef.current) elementFileInputRef.current.value = '';
+  };
+
+  const handleElementPaste = async (e) => {
+    const files = Array.from(e.clipboardData?.files || []);
+    if (files.length === 0) return;
+    const newAttachments = [];
+    for (const file of files) {
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        const dataUrl = await new Promise((resolve) => { reader.onload = (ev) => resolve(ev.target.result); reader.readAsDataURL(file); });
+        const fileName = file.name === 'image.png' ? `pasted-${Date.now()}.png` : file.name;
+        newAttachments.push({ name: fileName, type: file.type, isText: false, data: dataUrl });
+        e.preventDefault();
+      }
+    }
+    if (newAttachments.length > 0) setElementAttachments(prev => [...prev, ...newAttachments]);
+  };
+
+  const removeElementAttachment = (index) => setElementAttachments(prev => prev.filter((_, i) => i !== index));
 
   const handleFileChange = async (e) => {
     const files = Array.from(e.target.files);
@@ -2792,22 +2837,66 @@ Rules:
 
                   </div>
                 ) : (
-                  <div className="p-4 flex flex-col gap-3 h-full">
-                    <p className="text-xs text-zinc-400 mb-2">Use natural language to intelligently update styles, classes, or content without breaking the layout.</p>
-                    <div className="relative flex-1">
+                  <div className="p-3 flex flex-col gap-2 h-full">
+                    <p className="text-[10px] text-zinc-500">Describe the change, attach a reference image/file, or paste a screenshot — AI edits only this element.</p>
+                    {/* Attachments */}
+                    {elementAttachments.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {elementAttachments.map((att, idx) => (
+                          <div key={idx} className="relative group bg-[#1c1c1c] border border-zinc-700 rounded-lg p-1 pr-7 flex items-center gap-1.5 max-w-[130px]">
+                            {att.type?.startsWith('image/') ? (
+                              <img src={att.data} alt="preview" className="w-5 h-5 object-cover rounded shrink-0" />
+                            ) : att.type === 'application/pdf' ? (
+                              <File className="w-4 h-4 text-red-400 shrink-0" />
+                            ) : (
+                              <FileText className="w-4 h-4 text-blue-400 shrink-0" />
+                            )}
+                            <span className="text-[10px] text-zinc-300 truncate">{att.name}</span>
+                            <button onClick={() => removeElementAttachment(idx)} className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 bg-black/60 text-zinc-400 hover:text-white rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                              <X className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {/* Textarea + actions */}
+                    <div className="relative flex-1 flex flex-col">
                       <textarea
                         value={elementPrompt}
                         onChange={(e) => setElementPrompt(e.target.value)}
-                        placeholder="e.g. Make this a primary button with rounded corners and a purple gradient..."
-                        className="w-full bg-[#1c1c1c] border border-[#2e2e2e] rounded-lg text-white text-xs p-3 pr-10 h-32 resize-none outline-none focus:border-[#A78BFA] custom-scrollbar dark-scrollbar"
+                        onPaste={handleElementPaste}
+                        onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleElementAIEdit(); }}
+                        placeholder={elementAttachments.length > 0 ? 'Optional: add instructions for the AI...' : 'e.g. Make this a purple gradient button with rounded corners...'}
+                        className="w-full flex-1 bg-[#1c1c1c] border border-[#2e2e2e] rounded-lg text-white text-xs p-2.5 pb-9 resize-none outline-none focus:border-[#A78BFA] custom-scrollbar dark-scrollbar min-h-[100px]"
                       />
-                      <button
-                        onClick={handleElementAIEdit}
-                        disabled={isEditingElement || !elementPrompt.trim()}
-                        className="absolute right-3 bottom-3 p-1.5 bg-[#A78BFA] hover:bg-[#9061F9] text-white rounded-md disabled:opacity-50 disabled:hover:bg-[#A78BFA] transition-colors"
-                      >
-                        {isEditingElement ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></div> : <Sparkles className="w-4 h-4" />}
-                      </button>
+                      {/* Bottom toolbar inside textarea */}
+                      <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*,.pdf,.md,.txt,.js,.ts,.jsx,.tsx,.html,.css,.json,.svg"
+                            className="hidden"
+                            ref={elementFileInputRef}
+                            onChange={handleElementFileChange}
+                          />
+                          <button
+                            onClick={() => elementFileInputRef.current?.click()}
+                            title="Attach image, PDF, code or text file"
+                            className="p-1 text-zinc-500 hover:text-zinc-300 rounded transition-colors"
+                          >
+                            <Paperclip className="w-3.5 h-3.5" />
+                          </button>
+                          <span className="text-[9px] text-zinc-600">or paste image</span>
+                        </div>
+                        <button
+                          onClick={handleElementAIEdit}
+                          disabled={isEditingElement || (!elementPrompt.trim() && elementAttachments.length === 0)}
+                          className="p-1.5 bg-[#A78BFA] hover:bg-[#9061F9] text-white rounded-md disabled:opacity-40 transition-colors"
+                        >
+                          {isEditingElement ? <div className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
                     </div>
                     {isEditingElement && <p className="text-[10px] text-[#A78BFA] text-center animate-pulse">Applying AI changes...</p>}
                   </div>
