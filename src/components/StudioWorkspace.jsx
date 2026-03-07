@@ -140,6 +140,9 @@ const StudioWorkspace = () => {
   const [selectedIconPack, setSelectedIconPack] = useState(null);
   const [isChangingIcons, setIsChangingIcons] = useState(false);
   const iconPackAbortRef = useRef(null);
+  const [iconPacksList, setIconPacksList] = useState([]);
+  const [iconPacksLoading, setIconPacksLoading] = useState(false);
+  const [packSearch, setPackSearch] = useState('');
   const [attachments, setAttachments] = useState([]);
   const [previewItem, setPreviewItem] = useState(null);
 
@@ -176,6 +179,33 @@ const StudioWorkspace = () => {
       if (data?.systemInstruction) setLiveSystemInstruction(data.systemInstruction);
     }).catch(() => { });
   }, []);
+
+  // --- Fetch all Iconify icon packs when panel opens ---
+  useEffect(() => {
+    if (!showIconPackPanel || iconPacksList.length > 0 || iconPacksLoading) return;
+    setIconPacksLoading(true);
+    fetch('https://api.iconify.design/collections')
+      .then(r => r.json())
+      .then(data => {
+        const packs = Object.entries(data)
+          .filter(([, v]) => !v.hidden && v.samples?.length > 0)
+          .map(([prefix, v]) => ({
+            id: prefix,
+            name: v.name,
+            count: v.total || 0,
+            category: v.category || 'General',
+            samples: (v.samples || []).slice(0, 4),
+            palette: v.palette || false,
+          }))
+          .sort((a, b) => b.count - a.count);
+        setIconPacksList(packs);
+      })
+      .catch(() => {
+        // Fallback to built-in list on network failure
+        setIconPacksList(ICON_PACKS.map(p => ({ ...p, samples: ['home', 'user', 'search', 'heart'], palette: false, category: 'UI' })));
+      })
+      .finally(() => setIconPacksLoading(false));
+  }, [showIconPackPanel, iconPacksList.length, iconPacksLoading]);
 
   // --- Load user's token usage + per-user limit ---
   useEffect(() => {
@@ -1970,43 +2000,118 @@ ${filesContext}`;
                   Icons
                 </button>
 
-                {showIconPackPanel && (
-                  <div className="absolute right-0 top-full mt-3 w-72 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50 animate-fade-in">
-                    <div className="px-4 py-3 border-b border-slate-100">
-                      <p className="text-xs font-semibold text-slate-700">Switch Icon Pack</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">AI replaces all icons across every page</p>
+                {showIconPackPanel && (() => {
+                  const filtered = packSearch.trim()
+                    ? iconPacksList.filter(p =>
+                        p.name.toLowerCase().includes(packSearch.toLowerCase()) ||
+                        p.id.toLowerCase().includes(packSearch.toLowerCase()) ||
+                        p.category?.toLowerCase().includes(packSearch.toLowerCase())
+                      )
+                    : iconPacksList;
+                  const selectedPack = iconPacksList.find(p => p.id === selectedIconPack);
+                  return (
+                  <div className="absolute right-0 top-full mt-3 w-[420px] bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50 animate-fade-in flex flex-col" style={{ maxHeight: '520px' }}>
+                    {/* Header */}
+                    <div className="px-4 py-3 border-b border-slate-100 shrink-0">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <p className="text-xs font-semibold text-slate-700">Switch Icon Pack</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">AI replaces all icons across every page using Iconify</p>
+                        </div>
+                        {iconPacksLoading && <div className="w-4 h-4 rounded-full border-2 border-[#A78BFA] border-t-transparent animate-spin shrink-0" />}
+                      </div>
+                      {/* Search box */}
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                        <input
+                          type="text"
+                          value={packSearch}
+                          onChange={e => setPackSearch(e.target.value)}
+                          placeholder="Search icon packs..."
+                          className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#A78BFA] focus:ring-1 focus:ring-[#A78BFA]/20"
+                          autoFocus
+                        />
+                        {packSearch && (
+                          <button onClick={() => setPackSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                      {!iconPacksLoading && iconPacksList.length > 0 && (
+                        <p className="text-[10px] text-slate-400 mt-1.5">{filtered.length} of {iconPacksList.length} icon packs</p>
+                      )}
                     </div>
-                    <div className="max-h-60 overflow-y-auto custom-scrollbar py-1">
-                      {ICON_PACKS.map(pack => (
-                        <button
-                          key={pack.id}
-                          onClick={() => setSelectedIconPack(pack.id)}
-                          className={`w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center justify-between transition-colors ${selectedIconPack === pack.id ? 'bg-violet-50' : ''}`}
-                        >
-                          <div>
-                            <div className="text-xs font-semibold text-slate-800">{pack.name}</div>
-                            <div className="text-[10px] text-slate-400">{pack.desc} · {pack.count} icons</div>
-                          </div>
-                          {selectedIconPack === pack.id && (
-                            <div className="w-4 h-4 rounded-full bg-[#A78BFA] flex items-center justify-center shrink-0 ml-2">
-                              <Check className="w-2.5 h-2.5 text-white" />
+
+                    {/* Pack list */}
+                    <div className="overflow-y-auto custom-scrollbar flex-1 py-1">
+                      {iconPacksLoading ? (
+                        <div className="flex flex-col items-center justify-center py-10 gap-2">
+                          <div className="w-6 h-6 rounded-full border-2 border-[#A78BFA] border-t-transparent animate-spin" />
+                          <p className="text-xs text-slate-400">Loading {iconPacksList.length > 0 ? iconPacksList.length : '190+'} icon packs...</p>
+                        </div>
+                      ) : filtered.length === 0 ? (
+                        <p className="text-xs text-slate-400 text-center py-8">No packs match "{packSearch}"</p>
+                      ) : (
+                        filtered.map(pack => (
+                          <button
+                            key={pack.id}
+                            onClick={() => setSelectedIconPack(pack.id)}
+                            className={`w-full text-left px-3 py-2.5 hover:bg-slate-50 flex items-start gap-3 transition-colors border-b border-slate-50 last:border-0 ${selectedIconPack === pack.id ? 'bg-violet-50 border-violet-100' : ''}`}
+                          >
+                            {/* Icon previews */}
+                            <div className="flex items-center gap-1 shrink-0 mt-0.5">
+                              {pack.samples.slice(0, 4).map(iconName => (
+                                <img
+                                  key={iconName}
+                                  src={`https://api.iconify.design/${pack.id}/${iconName}.svg${!pack.palette ? '?color=%236B7280' : ''}`}
+                                  alt={iconName}
+                                  loading="lazy"
+                                  className="w-5 h-5"
+                                  onError={e => { e.target.style.opacity = '0'; }}
+                                />
+                              ))}
                             </div>
-                          )}
-                        </button>
-                      ))}
+                            {/* Info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs font-semibold text-slate-800 truncate">{pack.name}</span>
+                                <span className="text-[9px] text-slate-400 font-mono shrink-0">{pack.id}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-medium">{pack.category}</span>
+                                <span className="text-[9px] text-slate-400">{pack.count?.toLocaleString()} icons</span>
+                              </div>
+                            </div>
+                            {selectedIconPack === pack.id && (
+                              <div className="w-4 h-4 rounded-full bg-[#A78BFA] flex items-center justify-center shrink-0 mt-1">
+                                <Check className="w-2.5 h-2.5 text-white" />
+                              </div>
+                            )}
+                          </button>
+                        ))
+                      )}
                     </div>
-                    <div className="px-4 py-3 border-t border-slate-100">
+
+                    {/* Footer — selected + apply */}
+                    <div className="px-4 py-3 border-t border-slate-100 bg-slate-50 shrink-0">
+                      {selectedPack && (
+                        <p className="text-[10px] text-slate-500 mb-2">
+                          Selected: <span className="font-semibold text-[#A78BFA]">{selectedPack.name}</span>
+                          <span className="text-slate-400 ml-1">({selectedPack.id}:*) · {selectedPack.count?.toLocaleString()} icons</span>
+                        </p>
+                      )}
                       <button
                         onClick={handleIconPackChange}
                         disabled={!selectedIconPack}
                         className="w-full py-2 bg-[#A78BFA] hover:bg-[#9061F9] disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
                       >
                         <Zap className="w-3.5 h-3.5" />
-                        Apply with AI
+                        {selectedPack ? `Apply ${selectedPack.name} with AI` : 'Select a pack to apply'}
                       </button>
                     </div>
                   </div>
-                )}
+                  );
+                })()}
               </div>
             )}
 
